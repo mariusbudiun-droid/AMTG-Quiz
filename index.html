@@ -67,13 +67,26 @@
   <!-- HOME SCREEN -->
   <div id="screen-home">
     <h1>&#9992;&#65039; AMTG Quiz</h1>
-    <h2>EASA Part-66 B1.1 / B2 study companion (FAA source material)</h2>
+    <h2>EASA Part-66 study companion (FAA source material)</h2>
     <div class="badge-all">
       <div class="stat-chip" id="totalQCount">-- total questions</div>
-      <div class="stat-chip">Pass mark: 90%</div>
+      <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="border:none;cursor:pointer;font-weight:700;"></button>
+      <button class="stat-chip" onclick="goStats()" style="border:none;cursor:pointer;">📊 My Stats</button>
     </div>
+    <div class="section-label">Exam Simulation</div>
+    <div id="examList"></div>
+    <div class="section-label">Practice by Topic (full question bank)</div>
     <div id="chapterList"></div>
-    <div class="footer-note">Tap a module to start. Your best score per module is saved on this device. Module 10 (Aviation Legislation) is not covered — it is EASA-specific and outside FAA source material.<br><strong>Update #8</strong></div>
+    <div class="footer-note">Practice mode: browse the full question bank per topic, pass mark 90%. Exam Simulation: random questions at the real Part-66 length for your selected profile, pass mark 75% (the actual EASA pass mark). Your best scores and topic stats are saved on this device. Module 10 (Aviation Legislation) is not covered — it is EASA-specific and outside FAA source material.<br><strong>Update #10</strong></div>
+  </div>
+
+  <!-- STATS SCREEN -->
+  <div id="screen-stats" class="hidden">
+    <div class="topbar">
+      <button class="backbtn" onclick="goHome()">&#8592; Modules</button>
+    </div>
+    <h1 style="font-size:1.15rem;">📊 My Stats</h1>
+    <div id="statsBody"></div>
   </div>
 
   <!-- QUIZ SCREEN -->
@@ -112,6 +125,128 @@
 /* ====================== QUESTION DATA ====================== */
 const quizData = {
 m1: [
+{q:"What is 6/9 reduced to its lowest terms?",o:["2/3","3/4","1/2","6/9 cannot be reduced"],a:0,e:"6/9 = 2/3 after dividing both numerator and denominator by their greatest common factor, 3.",t:"Arithmetic"},
+{q:"What is the value of (5+3)² - 5² - 3²?",o:["0","15","30","64"],a:2,e:"(5+3)²=64. 5²=25, 3²=9. 64-25-9=30.",t:"Algebra"},
+{q:"What is 250% expressed as a decimal?",o:["0.25","2.5","25","250"],a:1,e:"250% = 250/100 = 2.5.",t:"Arithmetic"},
+{q:"What is 9 - 4 × 2 + 3?",o:["4","7","10","14"],a:0,e:"Order of operations: multiply first (4×2=8), then left to right: 9-8+3 = 1+3 = 4.",t:"Arithmetic"},
+{q:"What is 2/7 + 3/7?",o:["5/14","5/7","6/7","1"],a:1,e:"Same denominator, add numerators: 2/7 + 3/7 = 5/7.",t:"Arithmetic"},
+{q:"What is 0.08 expressed as a percentage?",o:["0.08%","0.8%","8%","80%"],a:2,e:"0.08 × 100 = 8%.",t:"Arithmetic"},
+{q:"What is the value of 12 ÷ 3 × 2?",o:["2","6","8","72"],a:2,e:"Multiplication and division have equal priority and are performed left to right: 12÷3=4, then 4×2=8.",t:"Arithmetic"},
+{q:"What is 5,000 milliliters converted to liters?",o:["0.5 L","5 L","50 L","500 L"],a:1,e:"1 liter = 1,000 milliliters, so 5,000 mL = 5,000/1,000 = 5 L.",t:"Arithmetic"},
+{q:"What is the value of x if 7x - 3 = 4x + 12?",o:["x = 3","x = 5","x = 9","x = 15"],a:1,e:"Subtract 4x: 3x - 3 = 12. Add 3: 3x = 15. Divide by 3: x = 5.",t:"Algebra"},
+{q:"If f(x) = 2x + 1, what is f(4)?",o:["7","8","9","11"],a:2,e:"f(4) = 2(4) + 1 = 8 + 1 = 9.",t:"Algebra"},
+{q:"Simplify: (2x)² ",o:["2x²","4x","4x²","2x"],a:2,e:"(2x)² = 2² × x² = 4x².",t:"Algebra"},
+{q:"What is the area of a square with a diagonal of 10 inches (Area = diagonal²/2)?",o:["25 sq in","50 sq in","100 sq in","70.7 sq in"],a:1,e:"Area = diagonal²/2 = 10²/2 = 100/2 = 50 square inches.",t:"Geometry"},
+{q:"What is the total surface area of a rectangular box measuring 4 x 3 x 2 inches?",o:["24 sq in","52 sq in","26 sq in","9 sq in"],a:1,e:"Surface area = 2(lw+lh+wh) = 2(4×3+4×2+3×2) = 2(12+8+6) = 2(26) = 52 square inches.",t:"Geometry"},
+{q:"What is the measure of each interior angle of a regular pentagon?",o:["100°","108°","120°","72°"],a:1,e:"Sum of interior angles of a pentagon = (5-2)×180° = 540°. Each angle = 540/5 = 108°.",t:"Geometry"},
+{q:"What is the value of sin(30°)?",o:["0","0.5","0.87","1"],a:1,e:"sin(30°) = 0.5, a standard trigonometric value worth memorizing.",t:"Trigonometry"},
+{q:"What is the value of cos(60°)?",o:["0","0.5","0.87","1"],a:1,e:"cos(60°) = 0.5, a standard trigonometric value.",t:"Trigonometry"},
+{q:"Convert the binary number 11001 to decimal.",o:["19","25","21","17"],a:1,e:"11001 = 16+8+0+0+1 = 25 in decimal.",t:"Numbering Systems"},
+{q:"What is 4/5 of 65?",o:["13","52","60","81.25"],a:1,e:"4/5 of 65 = (4×65)/5 = 260/5 = 52.",t:"Arithmetic"},
+{q:"A tank holds 120 gallons when full. If it currently reads 35% full, how many gallons remain to be added to fill it?",o:["42 gallons","78 gallons","85 gallons","35 gallons"],a:1,e:"Current amount = 35% of 120 = 42 gallons. Remaining to fill = 120-42 = 78 gallons.",t:"Arithmetic"},
+{q:"What is 3:5 expressed as a decimal ratio (3 divided by 5)?",o:["0.6","1.67","0.35","0.53"],a:0,e:"3 divided by 5 = 0.6.",t:"Ratio & Proportion"},
+{q:"What is 18 - (-5)?",o:["13","23","-13","-23"],a:1,e:"Subtracting a negative number is the same as adding its positive value: 18 - (-5) = 18 + 5 = 23.",t:"Arithmetic"},
+{q:"What is 0.6 multiplied by 0.3?",o:["0.18","1.8","0.9","18"],a:0,e:"0.6 × 0.3 = 0.18. Multiply as whole numbers (6×3=18) then place the decimal based on total decimal places (2): 0.18.",t:"Arithmetic"},
+{q:"An assembly requires 2.5 hours of labor. If a technician has already worked 1 hour 45 minutes on it, how much time remains?",o:["45 minutes","1 hour","1 hour 15 minutes","30 minutes"],a:0,e:"2.5 hours = 2 hours 30 minutes. Subtracting 1 hour 45 minutes: 2h30m - 1h45m = 45 minutes.",t:"Arithmetic"},
+{q:"What is 3.5 expressed as a fraction in its simplest form?",o:["3 1/2","35/100","3 5/10","7/3"],a:0,e:"3.5 = 3 + 0.5 = 3 + 1/2 = 3 1/2 (mixed number), which is already in simplest form.",t:"Arithmetic"},
+{q:"What is the value of x in the proportion 3/x = 9/15?",o:["x = 3","x = 5","x = 9","x = 45"],a:1,e:"Cross-multiply: 3 × 15 = 9 × x → 45 = 9x → x = 5.",t:"Ratio & Proportion"},
+{q:"If 40% of a batch of 60 rivets are found defective, how many rivets are defective?",o:["16","20","24","40"],a:2,e:"40% of 60 = 0.40 × 60 = 24.",t:"Arithmetic"},
+{q:"What is 2(3x - 4) + 5 simplified?",o:["6x - 3","6x + 1","6x - 13","3x - 3"],a:0,e:"Distribute: 6x - 8 + 5 = 6x - 3.",t:"Algebra"},
+{q:"Solve for x: x² = 49",o:["x = 7 only","x = -7 only","x = 7 or x = -7","x = 24.5"],a:2,e:"Both 7² = 49 and (-7)² = 49, so x = 7 or x = -7 are both valid solutions.",t:"Algebra"},
+{q:"What is the area of a parallelogram with a base of 14 cm and a height of 6 cm?",o:["20 sq cm","84 sq cm","42 sq cm","168 sq cm"],a:1,e:"Area of a parallelogram = base × height = 14 × 6 = 84 square cm.",t:"Geometry"},
+{q:"What is the length of an arc that spans a 90° angle on a circle with a radius of 8 inches (use π ≈ 3.14)?",o:["6.28 inches","12.56 inches","25.12 inches","50.24 inches"],a:1,e:"Arc length = (angle/360°) × 2πr = (90/360) × 2 × 3.14 × 8 = 0.25 × 50.24 = 12.56 inches.",t:"Geometry"},
+{q:"What is the value of cot(45°), the cotangent of a 45° angle?",o:["0","1","-1","Undefined"],a:1,e:"Cotangent is the reciprocal of tangent: cot(45°) = 1/tan(45°) = 1/1 = 1.",t:"Trigonometry"},
+{q:"Convert the decimal number 100 to binary.",o:["1100100","1100010","1010100","1111000"],a:0,e:"100 = 64+32+4 = 1100100 in binary (positions 64,32,16,8,4,2,1 with 1s at 64,32,4).",t:"Numbering Systems"},
+{q:"What is 7/12 + 1/6, using a common denominator of 12?",o:["8/12, or 2/3","9/12, or 3/4","7/18","5/12"],a:1,e:"Convert: 1/6 = 2/12. Adding: 7/12 + 2/12 = 9/12, which simplifies to 3/4.",t:"Arithmetic"},
+{q:"What is the value of 6! / 4! (6 factorial divided by 4 factorial)?",o:["1.5","30","24","720"],a:1,e:"6! = 720, 4! = 24. 720/24 = 30. Alternatively: 6!/4! = 6×5 = 30.",t:"Algebra"},
+{q:"What is 1/9 expressed as a repeating decimal?",o:["0.19","0.111...","0.9","0.19191919..."],a:1,e:"1 divided by 9 = 0.1111... (a repeating decimal, often written 0.1̄).",t:"Arithmetic"},
+{q:"What is 500 grams converted to kilograms?",o:["0.5 kg","5 kg","50 kg","5,000 kg"],a:0,e:"1 kilogram = 1,000 grams, so 500 grams = 500/1000 = 0.5 kg.",t:"Arithmetic"},
+{q:"A shop rate is $85 per hour. What is the labor cost for 3.5 hours of work?",o:["$255.00","$297.50","$280.00","$88.50"],a:1,e:"Labor cost = rate × hours = $85 × 3.5 = $297.50.",t:"Arithmetic"},
+{q:"What is the value of 2 + 3 × (4 - 1)²?",o:["29","45","19","11"],a:0,e:"Parentheses: (4-1)=3. Exponent: 3²=9. Multiply: 3×9=27. Add: 2+27=29.",t:"Arithmetic"},
+{q:"What is -3 + (-7)?",o:["4","-4","10","-10"],a:3,e:"Adding two negative numbers: their magnitudes add, and the result keeps the negative sign: -3 + (-7) = -10.",t:"Arithmetic"},
+{q:"Solve for x: 5x = 3x + 18",o:["x = 6","x = 9","x = 3","x = 18"],a:1,e:"Subtract 3x from both sides: 2x = 18. Divide by 2: x = 9.",t:"Algebra"},
+{q:"What is the slope-related value m in the linear equation y = 3x + 2, and what does it represent?",o:["m = 3, representing the rate of change (slope) of the line","m = 2, representing the slope","m = 3, representing the y-intercept","There is no defined slope in this equation"],a:0,e:"In the form y = mx + b, m represents the slope (rate of change), and b represents the y-intercept. Here m = 3.",t:"Algebra"},
+{q:"What is the value of the expression (x+3)(x-3) when x = 5?",o:["16","22","2","28"],a:0,e:"(x+3)(x-3) = x² - 9 (difference of squares). At x=5: 25-9=16.",t:"Algebra"},
+{q:"Which simple formula is NOT appropriate for calculating the area of a regular hexagon?",o:["Length × Width (the rectangle area formula)","A formula involving the hexagon's side length and apothem","Breaking the hexagon into triangles and summing their areas","A specialized regular polygon area formula"],a:0,e:"Length × Width is the formula for a rectangle's area, not a hexagon's; a regular hexagon's area requires a formula based on its side length and apothem, or by summing the areas of six equal triangles.",t:"Geometry"},
+{q:"What is the measure of each interior angle of a regular (equilateral) hexagon?",o:["60°","90°","120°","180°"],a:2,e:"Sum of interior angles of a hexagon = (6-2)×180° = 720°. For a regular hexagon, each angle = 720°/6 = 120°.",t:"Geometry"},
+{q:"What is the area of a right triangle with legs measuring 9 cm and 12 cm?",o:["21 sq cm","54 sq cm","108 sq cm","45 sq cm"],a:1,e:"Area of a right triangle = (leg1 × leg2)/2 = (9×12)/2 = 108/2 = 54 square cm.",t:"Geometry"},
+{q:"What is the cosecant of an angle, defined in relation to sine?",o:["The reciprocal of sine (1/sin)","The reciprocal of cosine (1/cos)","The same as sine","The reciprocal of tangent (1/tan)"],a:0,e:"Cosecant (csc) is defined as the reciprocal of sine: csc(θ) = 1/sin(θ).",t:"Trigonometry"},
+{q:"What is 2/3 expressed with a denominator of 12?",o:["6/12","8/12","4/12","10/12"],a:1,e:"Multiply numerator and denominator by 4: (2×4)/(3×4) = 8/12.",t:"Arithmetic"},
+{q:"What is 0.75 expressed as a fraction in its simplest form?",o:["3/4","7/5","75/10","3/40"],a:0,e:"0.75 = 75/100, which simplifies to 3/4 (dividing both by 25).",t:"Arithmetic"},
+{q:"If an engine consumes 12 gallons of fuel in 40 minutes, what is its fuel consumption rate in gallons per hour?",o:["8 gal/hr","18 gal/hr","20 gal/hr","30 gal/hr"],a:1,e:"Rate per hour = (12 gallons / 40 minutes) × 60 minutes = 18 gal/hr.",t:"Ratio & Proportion"},
+{q:"What is 7/8 minus 3/4?",o:["1/8","4/4","4/8","1/4"],a:0,e:"Convert to eighths: 3/4 = 6/8. Subtracting: 7/8 - 6/8 = 1/8.",t:"Arithmetic"},
+{q:"What is 250 ÷ 0.25?",o:["62.5","100","625","1,000"],a:3,e:"Dividing by 0.25 is the same as multiplying by 4: 250 ÷ 0.25 = 250 × 4 = 1,000.",t:"Arithmetic"},
+{q:"What is 6² + 2³?",o:["44","48","50","52"],a:0,e:"6² = 36, 2³ = 8. Sum: 36 + 8 = 44.",t:"Algebra"},
+{q:"Solve for x: 4(x - 2) = 3x + 1",o:["x = 3","x = 9","x = -9","x = -3"],a:1,e:"Distribute: 4x - 8 = 3x + 1. Subtract 3x: x - 8 = 1. Add 8: x = 9.",t:"Algebra"},
+{q:"What is the value of x² - 4 when x = 5?",o:["1","21","29","9"],a:1,e:"x² - 4 = 5² - 4 = 25 - 4 = 21.",t:"Algebra"},
+{q:"What is the area of a trapezoid with parallel sides of 8 and 12 inches and a height of 5 inches?",o:["50 sq in","60 sq in","100 sq in","20 sq in"],a:0,e:"Area of a trapezoid = ((base1+base2)/2) × height = ((8+12)/2) × 5 = 10 × 5 = 50 square inches.",t:"Geometry"},
+{q:"What is the volume of a sphere with a radius of 3 inches (use V = 4/3 × π × r³, π ≈ 3.14)?",o:["37.7 cubic inches","113.0 cubic inches","28.3 cubic inches","84.8 cubic inches"],a:1,e:"V = 4/3 × 3.14 × 3³ = 4/3 × 3.14 × 27 ≈ 113.0 cubic inches.",t:"Geometry"},
+{q:"If two angles of a triangle measure 50° and 70°, what is the measure of the third angle?",o:["50°","60°","70°","120°"],a:1,e:"All triangle angles sum to 180°. Third angle = 180 - 50 - 70 = 60°.",t:"Geometry"},
+{q:"What does the trigonometric function \"tangent\" represent as a ratio of a right triangle's sides?",o:["Opposite / Adjacent","Opposite / Hypotenuse","Adjacent / Hypotenuse","Hypotenuse / Opposite"],a:0,e:"Tangent of an angle = length of the opposite side divided by the length of the adjacent side.",t:"Trigonometry"},
+{q:"Convert the binary number 1111 to decimal.",o:["15","11","20","1111"],a:0,e:"1111 = 8+4+2+1 = 15 in decimal.",t:"Numbering Systems"},
+{q:"What is 3/4 of 200?",o:["50","100","150","175"],a:2,e:"3/4 of 200 = (3 × 200) / 4 = 600 / 4 = 150.",t:"Arithmetic"},
+{q:"A fastener kit contains bolts in a ratio of 2 short to 5 long. If there are 35 total bolts, how many are short?",o:["7","10","14","25"],a:1,e:"Total ratio parts = 2+5 = 7. Each part = 35/7 = 5. Short bolts = 2 × 5 = 10.",t:"Ratio & Proportion"},
+{q:"What is the value of 5⁰ + 3¹?",o:["3","4","8","15"],a:1,e:"5⁰ = 1 (any nonzero number to the power 0 is 1). 3¹ = 3. Sum: 1 + 3 = 4.",t:"Algebra"},
+{q:"What is 1,250 rounded to the nearest hundred?",o:["1,200","1,250","1,300","1,000"],a:2,e:"1,250 is exactly halfway between 1,200 and 1,300; standard rounding rules round up to 1,300.",t:"Arithmetic"},
+{q:"What is 45% expressed as a fraction in its simplest form?",o:["9/20","45/100","9/10","4.5/10"],a:0,e:"45% = 45/100, which simplifies to 9/20 (dividing both by 5).",t:"Arithmetic"},
+{q:"What is the greatest common factor (GCF) of 18 and 24?",o:["3","6","9","12"],a:1,e:"Factors of 18: 1,2,3,6,9,18. Factors of 24: 1,2,3,4,6,8,12,24. The greatest common factor is 6.",t:"Arithmetic"},
+{q:"A technician mixes 2 quarts of oil concentrate with 6 quarts of base oil. What fraction of the total mixture is concentrate?",o:["1/4","1/3","2/3","1/8"],a:0,e:"Total mixture = 2+6 = 8 quarts. Concentrate fraction = 2/8 = 1/4.",t:"Ratio & Proportion"},
+{q:"What is 9/10 expressed as a percentage?",o:["9%","19%","90%","0.9%"],a:2,e:"9/10 = 0.9. Converting to a percentage: 0.9 × 100 = 90%.",t:"Arithmetic"},
+{q:"What is the value of 100 - 3⁴?",o:["-19","19","91","97"],a:1,e:"3⁴ = 81. Then 100 - 81 = 19.",t:"Algebra"},
+{q:"Solve for y: 3y + 2 = 2y + 9",o:["y = 7","y = 11","y = -7","y = 3"],a:0,e:"Subtract 2y from both sides: y + 2 = 9. Subtract 2: y = 7.",t:"Algebra"},
+{q:"What is the area of a circle with a diameter of 10 inches (use π ≈ 3.14)?",o:["31.4 sq in","78.5 sq in","314 sq in","100 sq in"],a:1,e:"Radius = diameter/2 = 5. Area = πr² = 3.14 × 5² = 3.14 × 25 = 78.5 square inches.",t:"Geometry"},
+{q:"What is the volume of a rectangular fuel tank measuring 4 ft long, 2 ft wide, and 1.5 ft deep?",o:["7.5 cubic feet","12 cubic feet","8 cubic feet","10.5 cubic feet"],a:1,e:"Volume = length × width × height = 4 × 2 × 1.5 = 12 cubic feet.",t:"Geometry"},
+{q:"What is the sum of the interior angles of a quadrilateral (four-sided polygon)?",o:["180°","270°","360°","400°"],a:2,e:"The sum of interior angles of any quadrilateral is always 360° (equivalent to two triangles of 180° each).",t:"Geometry"},
+{q:"What is the circumference of a circle with a radius of 5 inches (use π ≈ 3.14)?",o:["15.7 inches","31.4 inches","78.5 inches","10 inches"],a:1,e:"Circumference = 2πr = 2 × 3.14 × 5 = 31.4 inches.",t:"Geometry"},
+{q:"In a right triangle, the hypotenuse is 13 and one leg is 5. What is the length of the other leg?",o:["8","12","18","9"],a:1,e:"Using the Pythagorean theorem: leg² = 13² - 5² = 169 - 25 = 144. leg = √144 = 12.",t:"Geometry"},
+{q:"What is the decimal equivalent of the fraction 5/8?",o:["0.58","0.625","0.85","1.6"],a:1,e:"5 divided by 8 = 0.625.",t:"Arithmetic"},
+{q:"An engine test cell records a fuel flow of 850 pounds per hour. Convert this to pounds per minute.",o:["14.2 lb/min","51,000 lb/min","850 lb/min","70.8 lb/min"],a:0,e:"850 lb/hour ÷ 60 minutes/hour ≈ 14.2 lb/minute.",t:"Arithmetic"},
+{q:"What is the missing value in the proportion 4:9 = 12:x?",o:["x = 27","x = 3","x = 21","x = 36"],a:0,e:"Cross-multiply: 4 × x = 9 × 12 → 4x = 108 → x = 27.",t:"Ratio & Proportion"},
+{q:"What is the reciprocal of 3/7?",o:["7/3","3/7","-3/7","1"],a:0,e:"The reciprocal of a fraction is found by flipping numerator and denominator: the reciprocal of 3/7 is 7/3.",t:"Arithmetic"},
+{q:"What is the octal (base 8) equivalent of the decimal number 8?",o:["8","10","1000","0"],a:1,e:"In base 8, the digit 8 does not exist (digits only go 0-7); decimal 8 is written as 10 in octal, similar to how decimal 10 is written as 10 in base 10.",t:"Numbering Systems"},
+{q:"What is the sine of a 0° angle?",o:["0","0.5","1","Undefined"],a:0,e:"The sine of 0° equals 0.",t:"Trigonometry"},
+{q:"What is the cosine of a 90° angle?",o:["0","0.5","1","-1"],a:0,e:"The cosine of 90° equals 0.",t:"Trigonometry"},
+{q:"What is 15% of 240?",o:["24","36","15","40"],a:1,e:"15% of 240 = 0.15 × 240 = 36.",t:"Arithmetic"},
+{q:"What is the result of 8 - 12?",o:["-4","4","20","-20"],a:0,e:"Subtracting a larger number from a smaller one gives a negative result: 8 - 12 = -4.",t:"Arithmetic"},
+{q:"What is the result of (-6) × (-3)?",o:["-18","18","-9","9"],a:1,e:"Multiplying two negative numbers gives a positive result: (-6) × (-3) = 18.",t:"Arithmetic"},
+{q:"What is the result of (-20) ÷ 4?",o:["-5","5","-16","16"],a:0,e:"Dividing a negative number by a positive number gives a negative result: -20 ÷ 4 = -5.",t:"Arithmetic"},
+{q:"Round 128.456 to the nearest whole number.",o:["128","129","128.5","130"],a:0,e:"Since the first decimal digit (4) is less than 5, round down: 128.456 rounds to 128.",t:"Arithmetic"},
+{q:"What is 2/5 expressed as a decimal?",o:["0.2","0.4","0.25","2.5"],a:1,e:"2 divided by 5 = 0.4.",t:"Arithmetic"},
+{q:"What is the lowest common denominator of 1/6 and 1/8?",o:["48","24","14","2"],a:1,e:"The LCD of 6 and 8 is 24, the smallest number both 6 and 8 divide into evenly.",t:"Arithmetic"},
+{q:"A part is manufactured with a tolerance of ±0.005 inch on a nominal 2.500 inch dimension. What is the maximum acceptable dimension?",o:["2.495 inch","2.500 inch","2.505 inch","2.510 inch"],a:2,e:"Maximum = nominal + tolerance = 2.500 + 0.005 = 2.505 inch.",t:"Arithmetic"},
+{q:"What is the sum of 3/8 + 1/4?",o:["4/12","5/8","1/2","4/8"],a:1,e:"Convert to a common denominator: 1/4 = 2/8. Adding: 3/8 + 2/8 = 5/8.",t:"Arithmetic"},
+{q:"What is 60 divided by 0.5?",o:["30","120","12","6"],a:1,e:"Dividing by 0.5 is the same as multiplying by 2: 60 ÷ 0.5 = 60 × 2 = 120.",t:"Arithmetic"},
+{q:"What is the value of |-15|, the absolute value of -15?",o:["-15","0","15","30"],a:2,e:"The absolute value of a number is always its non-negative (positive or zero) magnitude, regardless of sign: |-15| = 15.",t:"Arithmetic"},
+{q:"If a solvent mixture requires 3 parts water to 1 part concentrate, how many parts water are needed for 8 parts concentrate?",o:["3 parts","8 parts","24 parts","11 parts"],a:2,e:"The ratio is 3:1 (water:concentrate). For 8 parts concentrate: 3 × 8 = 24 parts water.",t:"Ratio & Proportion"},
+{q:"If 5 identical bolts weigh 2 pounds, how much do 15 of the same bolts weigh?",o:["4 pounds","6 pounds","10 pounds","30 pounds"],a:1,e:"Set up a proportion: 5 bolts : 2 lb = 15 bolts : x. Since 15 is 3 times 5, x = 3 × 2 = 6 pounds.",t:"Ratio & Proportion"},
+{q:"A scale drawing uses a ratio of 1:50. If a component measures 3 cm on the drawing, what is its actual size?",o:["50 cm","150 cm","3 cm","53 cm"],a:1,e:"With a 1:50 scale, actual size = drawing size × 50 = 3 × 50 = 150 cm."},
+{q:"If y is directly proportional to x, and y = 12 when x = 4, what is y when x = 10?",o:["18","24","30","3"],a:2,e:"Directly proportional means y = kx. From y=12,x=4: k=3. When x=10: y=3×10=30.",t:"Ratio & Proportion"},
+{q:"Simplify the algebraic expression: 4x + 3x - 2x",o:["5x","9x","4x","6x"],a:0,e:"Combine like terms: 4x + 3x - 2x = (4+3-2)x = 5x.",t:"Algebra"},
+{q:"Solve for x: 2x - 7 = 15",o:["x = 4","x = 8","x = 11","x = 22"],a:2,e:"2x - 7 = 15 → 2x = 22 → x = 11.",t:"Algebra"},
+{q:"Solve for x: x/3 + 4 = 10",o:["x = 2","x = 18","x = 42","x = 6"],a:1,e:"x/3 + 4 = 10 → x/3 = 6 → x = 18.",t:"Algebra"},
+{q:"Simplify: 3(x + 4) - 2x",o:["x + 12","5x + 12","x + 4","5x + 4"],a:0,e:"Distribute: 3x + 12 - 2x = (3x-2x) + 12 = x + 12.",t:"Algebra"},
+{q:"If a = 5 and b = 3, what is the value of 2a² - b?",o:["47","13","22","44"],a:0,e:"2a² - b = 2(5²) - 3 = 2(25) - 3 = 50 - 3 = 47.",t:"Algebra"},
+{q:"Solve the system: x + y = 10 and x - y = 4. What is the value of x?",o:["3","6","7","14"],a:2,e:"Adding both equations: 2x = 14, so x = 7 (and y = 3).",t:"Algebra"},
+{q:"What is the value of the expression 5x² when x = -2?",o:["-20","20","10","-10"],a:1,e:"5x² = 5(-2)² = 5(4) = 20. Note that squaring a negative number gives a positive result.",t:"Algebra"},
+{q:"What is the perimeter of a square with a side length of 9 cm?",o:["18 cm","36 cm","81 cm","9 cm"],a:1,e:"Perimeter of a square = 4 × side = 4 × 9 = 36 cm.",t:"Geometry"},
+{q:"What is the area of a triangle with a base of 10 inches and a height of 6 inches?",o:["16 sq in","30 sq in","60 sq in","36 sq in"],a:1,e:"Area of a triangle = (base × height) / 2 = (10 × 6) / 2 = 30 square inches.",t:"Geometry"},
+{q:"What is the volume of a cylinder with a radius of 3 inches and a height of 10 inches (use π ≈ 3.14)?",o:["94.2 cubic inches","282.6 cubic inches","30 cubic inches","188.4 cubic inches"],a:1,e:"Volume of a cylinder = π × r² × h = 3.14 × 3² × 10 = 3.14 × 9 × 10 = 282.6 cubic inches.",t:"Geometry"},
+{q:"What is the surface area of a cube with a side length of 4 cm?",o:["16 sq cm","64 sq cm","96 sq cm","24 sq cm"],a:2,e:"A cube has 6 equal square faces. Area of one face = 4² = 16. Total surface area = 6 × 16 = 96 square cm.",t:"Geometry"},
+{q:"In a right triangle, if the two legs are 6 and 8, what is the length of the hypotenuse?",o:["10","14","48","7"],a:0,e:"Using the Pythagorean theorem: c² = 6² + 8² = 36 + 64 = 100. c = √100 = 10.",t:"Geometry"},
+{q:"What is the diameter of a circle whose radius is 7 inches?",o:["3.5 inches","7 inches","14 inches","49 inches"],a:2,e:"Diameter is always twice the radius: 2 × 7 = 14 inches.",t:"Geometry"},
+{q:"What is the tangent of a 45° angle?",o:["0","0.5","1","Undefined"],a:2,e:"The tangent of 45° equals 1, since in a 45-45-90 right triangle the two legs (opposite and adjacent to the 45° angle) are equal in length.",t:"Trigonometry"},
+{q:"In a right triangle with a 30° angle, the hypotenuse is 20. Using sin(30°) = 0.5, what is the length of the side opposite the 30° angle?",o:["5","10","15","20"],a:1,e:"sin(angle) = opposite/hypotenuse. Opposite = sin(30°) × hypotenuse = 0.5 × 20 = 10.",t:"Trigonometry"},
+{q:"What is the value of cos(0°)?",o:["0","0.5","1","Undefined"],a:2,e:"The cosine of 0° equals 1 — at 0°, the adjacent side and the hypotenuse are equal in a right triangle context.",t:"Trigonometry"},
+{q:"What is the value of sin(90°)?",o:["0","0.5","1","-1"],a:2,e:"The sine of 90° equals 1, the maximum value the sine function reaches.",t:"Trigonometry"},
+{q:"Convert the binary number 1010 to decimal.",o:["8","10","12","5"],a:1,e:"1010 in binary = (1×8)+(0×4)+(1×2)+(0×1) = 8+0+2+0 = 10 in decimal.",t:"Numbering Systems"},
+{q:"Convert the decimal number 13 to binary.",o:["1101","1011","1110","1100"],a:0,e:"13 = 8+4+1 = 1101 in binary (bit positions 8,4,2,1 with 1s at 8,4,1 and 0 at 2).",t:"Numbering Systems"},
+{q:"What is the binary equivalent of the decimal number 5?",o:["100","101","110","111"],a:1,e:"5 = 4+1 = 101 in binary (bit positions 4,2,1 with 1s at 4 and 1, 0 at 2).",t:"Numbering Systems"},
+{q:"What is the hexadecimal (base 16) equivalent of the decimal number 255?",o:["FF","F0","100","FE"],a:0,e:"255 in hexadecimal is FF, since F represents 15 in each hex digit position, and 15×16 + 15 = 255.",t:"Numbering Systems"},
+{q:"A pilot hole must be drilled 0.015 inch smaller than the final reamed diameter of 0.250 inch. What is the pilot hole diameter?",o:["0.235 inch","0.265 inch","0.250 inch","0.015 inch"],a:0,e:"Pilot hole diameter = final diameter - undersize allowance = 0.250 - 0.015 = 0.235 inch.",t:"Arithmetic"},
+{q:"An aircraft climbs from 2,000 feet to 9,500 feet. How many feet did it climb?",o:["7,500 feet","11,500 feet","7,000 feet","9,500 feet"],a:0,e:"Change in altitude = 9,500 - 2,000 = 7,500 feet.",t:"Arithmetic"},
+{q:"What is 1/2 + 1/3 + 1/6, using a common denominator of 6?",o:["3/6, or 1/2","1","6/6, or 1","1/6"],a:2,e:"Convert to sixths: 1/2=3/6, 1/3=2/6, 1/6=1/6. Sum: 3/6+2/6+1/6=6/6=1.",t:"Arithmetic"},
+{q:"What is 4 raised to the power of 3 (4³)?",o:["12","64","81","7"],a:1,e:"4³ = 4 × 4 × 4 = 64.",t:"Algebra"},
+{q:"What is the cube root of 27?",o:["3","9","6","13.5"],a:0,e:"3 × 3 × 3 = 27, so the cube root of 27 is 3.",t:"Algebra"},
 {q:"What is the average of the numbers 12, 18, and 24?",o:["16","18","20","54"],a:1,e:"Average = sum of values / number of values = (12+18+24)/3 = 54/3 = 18."},
 {q:"A technician needs to convert 4.5 hours into minutes. What is the correct value?",o:["45 minutes","270 minutes","450 minutes","4.5 minutes"],a:1,e:"4.5 hours × 60 minutes/hour = 270 minutes."},
 {q:"What is the square root of 81?",o:["8","9","18","40.5"],a:1,e:"9 × 9 = 81, so the square root of 81 is 9."},
@@ -188,6 +323,10 @@ m1: [
 
 ],
 m2: [
+{q:"What is the general effect of increasing altitude on the boiling point of hydraulic fluid or fuel, given the lower atmospheric pressure?",o:["The boiling point decreases at higher altitude due to lower atmospheric pressure","The boiling point increases at higher altitude","Altitude has no effect on boiling point","Boiling point depends only on fluid color, not altitude"],a:0,e:"As atmospheric pressure decreases with altitude, the boiling point of a liquid also decreases, which is why fuel vapor lock becomes more likely at high altitude/low pressure conditions."},
+{q:"What is the difference between a solid, a liquid, and a gas in terms of molecular behavior?",o:["Solids have fixed shape and volume; liquids have fixed volume but take the shape of their container; gases have neither fixed shape nor fixed volume","All three states have identical molecular behavior","Gases have fixed shape but variable volume","Liquids have fixed shape but variable volume"],a:0,e:"Solids maintain a fixed shape and volume due to tightly bound molecules; liquids have a fixed volume but flow to take the shape of their container; gases have neither fixed shape nor fixed volume, expanding to fill their container."},
+{q:"What does the term \"latent heat\" refer to, such as the latent heat of vaporization?",o:["The heat energy absorbed or released during a change of state (such as liquid to gas) without a change in temperature","The heat energy that always changes the temperature of a substance","A term unrelated to changes of state","The heat lost only through radiation"],a:0,e:"Latent heat is the heat energy absorbed or released during a phase change (such as liquid to gas, or solid to liquid) at constant temperature — for example, boiling water requires continuous heat input while temperature remains at 100°C until fully vaporized."},
+{q:"What is the relationship between the frequency of a sound wave and the pitch a human ear perceives?",o:["Higher frequency corresponds to a higher perceived pitch","Higher frequency corresponds to a lower perceived pitch","Frequency has no relationship to pitch","Pitch depends only on amplitude, not frequency"],a:0,e:"Higher sound wave frequency corresponds to a higher perceived pitch; lower frequency corresponds to a lower perceived pitch — amplitude instead relates to perceived loudness."},
 {q:"What is the relationship between force, mass, and acceleration according to Newton's Second Law?",o:["Force equals mass multiplied by acceleration (F = m × a)","Force equals mass divided by acceleration","Force equals mass plus acceleration","Force is unrelated to mass and acceleration"],a:0,e:"Newton's Second Law states that Force equals mass multiplied by acceleration (F = m × a) — the greater an object's mass or the acceleration applied to it, the greater the force required."},
 {q:"What is the definition of \"acceleration\" in physics?",o:["The rate of change of velocity over time","The total distance traveled by an object","A constant speed with no change over time","A term used only to describe rotational motion"],a:0,e:"Acceleration is the rate of change of velocity over time — an object accelerates whenever its speed, direction, or both change."},
 {q:"What does \"negative acceleration\" (deceleration) mean for a moving object?",o:["The object's velocity is decreasing over time","The object is moving backward at all times","The object has zero mass","Negative acceleration is not a valid physical concept"],a:0,e:"Negative acceleration (deceleration) means the object's velocity is decreasing over time — the object could still be moving forward, just slowing down."},
@@ -262,6 +401,8 @@ m2: [
 
 ],
 m8: [
+{q:"What is the effect of icing accumulation on a wing's aerodynamic performance?",o:["Ice disrupts the smooth airflow over the wing, reducing lift and increasing drag, and can significantly raise the stall speed","Ice has no measurable aerodynamic effect on a wing","Ice always increases lift while having no effect on drag","Icing only affects the fuselage, never the wings"],a:0,e:"Ice accumulation on a wing disrupts smooth airflow, reducing the wing's maximum lift capability and increasing drag, which can significantly raise the stall speed and degrade overall performance — a serious safety concern."},
+,
 {q:"What is the difference between an aircraft's absolute ceiling and its service ceiling?",o:["Absolute ceiling is the altitude at which climb rate reaches zero; service ceiling is the altitude at which climb rate has decreased to a specified small value (often 100 feet per minute)","Absolute ceiling and service ceiling are identical terms with no distinction","Service ceiling is always higher than absolute ceiling","Absolute ceiling refers only to cabin pressurization limits"],a:0,e:"Absolute ceiling is the altitude at which the aircraft's climb rate reaches zero (it can climb no higher); service ceiling is the lower altitude at which climb rate has decreased to a specified small value, commonly 100 feet per minute, representing a more practical operational limit."},
 {q:"What is the general effect of extending trailing-edge flaps on an aircraft's pitching moment, and why does this matter to pilots?",o:["Extending flaps typically causes a nose-down pitching moment on many aircraft due to the shift in the center of lift, requiring pilot trim/control input to compensate","Extending flaps has no effect on pitching moment for any aircraft type","Extending flaps always causes a nose-up pitching moment on every aircraft","Flaps only affect roll, never pitch"],a:0,e:"Extending trailing-edge flaps typically shifts the center of lift aft on many aircraft, producing a nose-down pitching moment that requires the pilot to apply trim or control input to compensate and maintain the desired pitch attitude."},
 {q:"What is the purpose of vortex generators sometimes installed on a wing's upper surface?",o:["To energize the boundary layer by creating small vortices, delaying flow separation and helping maintain effective control at higher angles of attack","To reduce the aircraft's overall weight","To provide anti-icing to the wing surface","To generate additional engine thrust"],a:0,e:"Vortex generators are small fin-like devices on the wing's upper surface that create small vortices, energizing the boundary layer and delaying airflow separation, which helps maintain effective aerodynamic control (such as aileron effectiveness) at higher angles of attack."},
@@ -303,6 +444,8 @@ m8: [
 {q:"What happens to air velocity and static pressure when subsonic air flows through a diverging (expanding) duct or passage?",o:["Velocity decreases and static pressure rises","Velocity increases and static pressure decreases","Both velocity and static pressure remain constant","Both velocity and static pressure increase"],a:0,e:"When subsonic air flows through a diverging shaped passage, the velocity decreases and the static pressure rises, consistent with the behavior of incompressible flow at subsonic speeds."},
 ],
 m9: [
+{q:"How can a poorly designed or ambiguous work card/task card itself become a human factors risk, independent of the technician's skill?",o:["An unclear or poorly written task card can lead to misinterpretation of the required steps, increasing the risk of an incomplete or incorrect repair even by a skilled, careful technician","Task card design has no bearing on maintenance errors","Only handwritten task cards can be ambiguous; printed ones are always clear","Task cards are irrelevant once a technician has years of experience"],a:0,e:"A poorly designed or ambiguous task card can lead to misinterpretation of required steps, increasing the risk of an incomplete or incorrect repair even for a skilled, careful technician — highlighting that human factors extend beyond the individual to the systems and documentation supporting the work."},
+,
 {q:"Why might rotating technicians periodically between different tasks or aircraft help mitigate the risk of complacency?",o:["It reduces the chance of a technician becoming so accustomed to one specific repetitive task that they stop noticing subtle abnormalities","Rotation always increases errors and should be avoided entirely","Rotation has no effect on complacency, only on scheduling efficiency","Complacency can only be mitigated through additional paperwork, never task variation"],a:0,e:"Rotating technicians between tasks can help mitigate complacency by reducing the chance that a technician becomes so accustomed to one narrow, repetitive task that they stop noticing subtle abnormalities that a fresh perspective might catch."},
 ,
 {q:"How can excessive reliance on automation or a checklist, without genuine understanding of the underlying system, itself become a human factors risk?",o:["A technician may follow steps mechanically without recognizing an abnormal condition that falls outside the checklist's assumptions, missing a developing problem","Checklists eliminate all possibility of human error and carry no risk of their own","Automation removes the need for any technician training or knowledge","This scenario has no relevance to aviation maintenance"],a:0,e:"Following a checklist or automated process mechanically, without genuine understanding of the underlying system, can be a risk in itself: a technician may fail to recognize an abnormal condition that falls outside the checklist's built-in assumptions, missing a developing problem the checklist was never designed to catch."},
@@ -343,6 +486,10 @@ m9: [
 
 ],
 m3: [
+{q:"What is the total current in a parallel circuit with three branches carrying 2A, 3A, and 5A respectively?",o:["10A","5A","3.33A","30A"],a:0,e:"In a parallel circuit, total current is the sum of the branch currents: 2+3+5 = 10A."},
+{q:"A 24V battery is connected across a 6-ohm resistor. What is the current flowing through the resistor?",o:["4A","0.25A","18A","144A"],a:0,e:"Ohm's Law: I = V/R = 24/6 = 4A."},
+{q:"What does a diode's forward voltage drop typically measure for a standard silicon diode?",o:["Approximately 0.7V","Approximately 5V","Approximately 12V","Approximately 0V"],a:0,e:"A standard silicon diode has a typical forward voltage drop of approximately 0.7V when conducting in the forward direction."},
+{q:"What is the purpose of a diode bridge (bridge rectifier), made of four diodes?",o:["To convert AC to full-wave rectified DC using all four diodes to conduct on alternating half-cycles","To convert DC to AC","To store electrical charge","To measure voltage"],a:0,e:"A diode bridge rectifier uses four diodes arranged so that, on each half-cycle of the AC input, a different pair conducts, producing full-wave rectified DC output at the bridge's output terminals."},
 {q:"What is the total resistance of two 100-ohm resistors connected in series?",o:["50 ohms","100 ohms","200 ohms","10,000 ohms"],a:2,e:"In series, total resistance is the sum of individual resistances: 100 + 100 = 200 ohms."},
 {q:"What is the total resistance of two 100-ohm resistors connected in parallel?",o:["200 ohms","100 ohms","50 ohms","10,000 ohms"],a:2,e:"For two equal resistors in parallel, total resistance is half of one resistor's value: (100×100)/(100+100) = 10,000/200 = 50 ohms."},
 {q:"Using Ohm's Law, if a circuit has 12 volts and 4 ohms of resistance, what is the current?",o:["48 amps","3 amps","16 amps","0.33 amps"],a:1,e:"Ohm's Law: I = V/R = 12/4 = 3 amps."},
@@ -410,6 +557,8 @@ m3: [
 
 ],
 m45: [
+{q:"What is the purpose of a pull-up resistor in a digital logic input circuit?",o:["To ensure a defined logic HIGH state at the input when no active signal is driving it low, preventing a floating (undefined) input","To pull the signal down to logic LOW at all times","To amplify the digital signal","To convert the digital signal to analog"],a:0,e:"A pull-up resistor connects an input line to a positive voltage through a resistor, ensuring a defined logic HIGH state when nothing else is actively driving the line low, preventing an undefined \"floating\" input state."},
+{q:"What does the term \"bandwidth\" refer to in a data communication or electronic system?",o:["The range of frequencies (or the data rate) a system can effectively transmit or process","The physical width of the circuit board","The total electrical resistance of the system","A term unrelated to signal transmission"],a:0,e:"Bandwidth refers to the range of frequencies (or, in digital systems, the data rate) that a communication channel or system can effectively transmit or process — higher bandwidth generally allows more data to be transferred in a given time."},
 {q:"What is the general purpose of shielding on an electrical wire or cable used in avionics installations?",o:["To reduce electromagnetic interference (EMI) either radiating from the wire or being picked up by it from external sources","To increase the wire's current carrying capacity","To provide the wire's primary electrical insulation","To reduce the wire's overall weight"],a:0,e:"Shielding (typically a braided or foil conductive layer surrounding the wire, connected to ground) reduces electromagnetic interference (EMI) either radiating out from the wire or being picked up by it from nearby sources, protecting sensitive avionics signals."},
 {q:"What is a common cause of intermittent avionics faults that can be particularly difficult for a technician to diagnose?",o:["A loose or corroded connector pin/contact that only causes a fault under certain conditions, such as vibration or temperature changes","Faults are never intermittent in properly designed avionics systems","Intermittent faults are always caused by software bugs, never hardware","Intermittent faults can only be diagnosed by full system replacement"],a:0,e:"A loose or corroded connector pin or contact is a common cause of intermittent avionics faults, since it may make good enough contact most of the time but fail under specific conditions like vibration, temperature change, or movement — making these faults notoriously difficult to isolate."},
 {q:"What does the term \"latency\" refer to in a digital data bus or communication system?",o:["The delay between when data is sent and when it is actually received or processed at the destination","The total bandwidth capacity of the bus","The physical length of the bus cable","A term describing only analog signal distortion"],a:0,e:"Latency is the delay between when data is transmitted and when it is actually received or processed at its destination — lower latency means faster, more responsive data transfer, important for time-critical avionics functions."},
@@ -459,6 +608,8 @@ m45: [
 {q:"What is a common advantage of fiber optic technology over traditional copper wiring in aircraft data transmission systems?",o:["Fiber optics are heavier and provide better structural support","Fiber optics are immune to electromagnetic interference and can carry significantly more data over lighter cabling","Fiber optics cannot transmit digital data at all","Fiber optics require no maintenance ever"],a:1,e:"Fiber optic cabling is immune to electromagnetic interference (unlike copper wire) and can carry much greater data bandwidth while typically being lighter than equivalent copper wiring bundles."},
 ],
 m6: [
+{q:"What is the general purpose of a hardness tester, such as a Rockwell or Brinell tester, used on aircraft materials?",o:["To measure a material's resistance to indentation or penetration, providing an indirect indication of its strength and suitability for a given application","To measure the material's exact chemical composition","To measure the material's electrical conductivity","To measure the material's color consistency"],a:0,e:"A hardness tester (such as Rockwell or Brinell) measures a material's resistance to indentation or penetration under a controlled load, providing an indirect but useful indication of strength characteristics and material suitability."},
+,
 {q:"What is the general purpose of using a go/no-go gauge when inspecting a hole or fastener for dimensional conformity?",o:["To quickly determine whether a dimension falls within an acceptable tolerance range, without needing a precision measurement for every inspection","To measure electrical resistance across a joint","To measure the exact torque applied to a fastener","To test for the presence of corrosion only"],a:0,e:"A go/no-go gauge provides a quick pass/fail check of whether a dimension (such as a hole diameter) falls within an acceptable tolerance range, without requiring a precise numerical measurement for every part inspected — the \"go\" end should fit, the \"no-go\" end should not."},
 ,
 {q:"What is the general purpose of applying a primer coat before the topcoat when painting aircraft structure?",o:["To improve adhesion of the topcoat and provide additional corrosion protection to the underlying metal surface","To provide the final color and gloss finish, replacing the need for a topcoat","To remove the need for any surface preparation before painting","To increase the structure's weight for balance purposes"],a:0,e:"A primer coat improves the adhesion of the subsequent topcoat and provides additional corrosion protection to the underlying metal surface, forming a critical part of a complete, durable paint system."},
@@ -527,6 +678,8 @@ m6: [
 {q:"When repairing a damaged composite ply, why is it critical to replace it with a ply of the same material and the same fiber orientation?",o:["It is not actually critical — any orientation will work equally well","Because composite structures derive their strength directionally from fiber orientation; an incorrect orientation compromises the repair's structural integrity","Because different orientations change the surface color","Because the manufacturer's warranty requires it only for cosmetic reasons"],a:1,e:"Since composite strength is directional (following fiber orientation), a repair ply with the wrong material or orientation will not restore the original structural strength and load path of the part."},
 ],
 m7: [
+{q:"What is the general purpose of an AD (Airworthiness Directive) compliance record maintained in an aircraft's permanent records?",o:["To document that a mandatory Airworthiness Directive has been complied with, including the method of compliance and next due date if recurring","To document only voluntary manufacturer recommendations, never mandatory items","To replace the need for any other maintenance record","To track only cosmetic modifications to the aircraft"],a:0,e:"An AD compliance record documents that a mandatory Airworthiness Directive has been complied with, including the method of compliance used and the next due date if the AD is recurring — an essential permanent record that transfers with the aircraft."},
+,
 {q:"What is the general purpose of a placard or warning tag such as \"DO NOT OPERATE\" attached to an aircraft or system during maintenance?",o:["To clearly communicate to other personnel (including flight crew) that the aircraft or a specific system is unsafe to operate until the tag is removed by authorized personnel","To indicate that maintenance has been fully completed","To replace the need for a logbook entry","To indicate the aircraft's registration number"],a:0,e:"A \"DO NOT OPERATE\" placard or warning tag clearly communicates to other personnel — including flight crew — that the aircraft or a specific system is unsafe or not approved to operate until the tag is removed by authorized maintenance personnel."},
 ,
 {q:"What is the general purpose of using a calibrated torque wrench, and why must torque wrenches themselves be periodically recalibrated?",o:["A calibrated torque wrench ensures fasteners are tightened to the specified value; periodic recalibration is needed because mechanical wear and repeated use can cause the tool's accuracy to drift over time","Torque wrenches never require recalibration once purchased","Calibration is only relevant for electronic test equipment, not mechanical tools","Recalibration is only required if the tool is visibly damaged"],a:0,e:"A calibrated torque wrench ensures fasteners are tightened to the manufacturer's specified value, critical for structural integrity; periodic recalibration is required because mechanical wear from repeated use can cause the tool's accuracy to drift over time, even without visible damage."},
@@ -625,6 +778,8 @@ m7: [
 ,
 ],
 m1113a: [
+{q:"What is the purpose of a fuel boost pump located inside a fuel tank?",o:["To provide positive fuel pressure to the engine-driven fuel pump inlet, helping prevent fuel starvation or vapor lock, especially at altitude","To measure fuel quantity directly","To filter fuel contaminants exclusively","To provide hydraulic pressure to the landing gear"],a:0,e:"A fuel boost pump provides positive fuel pressure to the inlet of the engine-driven fuel pump, helping prevent fuel starvation or vapor lock, particularly important at altitude where atmospheric pressure is lower."},
+,
 {q:"What is the purpose of a fuel quantity totalizer system, as distinct from individual tank quantity gauges?",o:["To sum and display the total fuel quantity across all tanks, providing a single overall reading in addition to individual tank indications","To measure only the fuel in the smallest tank","To replace individual tank sensors entirely with no backup","To measure oil quantity, not fuel"],a:0,e:"A fuel totalizer system sums the fuel quantity readings from all individual tanks and displays a single total fuel quantity value, supplementing (not replacing) the individual tank gauges."},
 ,
 {q:"What is the purpose of a fuel tank sump drain valve?",o:["To allow water and sediment, which settle at the lowest point of the tank, to be drained and checked before flight","To provide the primary fuel supply connection to the engine","To vent excess fuel vapor overboard during flight","To measure fuel temperature"],a:0,e:"A fuel tank sump drain valve allows water (which is denser than fuel and settles at the lowest point) and sediment to be drained and visually checked before flight, an important preflight fuel contamination check."},
@@ -664,6 +819,8 @@ m1113a: [
 {q:"What is the purpose of fuel tank vent systems?",o:["To allow air to enter or leave the tank as fuel is used or added, preventing a pressure differential that could collapse or rupture the tank","To vent excess fuel overboard during normal flight","To provide combustion air to the engine","To measure fuel temperature"],a:0,e:"Fuel tank vent systems allow air to enter the tank as fuel is consumed (preventing a vacuum that could collapse the tank) and to allow air/vapor to escape as fuel is added, maintaining a safe pressure differential."},
 ],
 m1113b: [
+{q:"What is the purpose of an emergency hydraulic power source, such as a hand pump or accumulator-backed system, on smaller aircraft?",o:["To provide a backup means of operating critical hydraulic systems (such as landing gear or brakes) if the primary hydraulic power source fails","To provide the primary source of hydraulic power in normal operation","To increase normal system pressure beyond the primary pump's capability","To measure hydraulic fluid temperature"],a:0,e:"An emergency hydraulic power source, such as a hand pump or accumulator, provides a backup means of operating critical systems (landing gear extension, brakes) if the primary engine-driven hydraulic pump fails."},
+,
 {q:"What is the purpose of a fusible plug (thermal relief device) sometimes installed in a fire extinguisher container?",o:["To automatically discharge the extinguishing agent if the container is exposed to excessive heat, preventing a dangerous pressure buildup and potential explosion","To provide the primary trigger mechanism for normal, intentional crew-activated discharge","To measure the container's exact remaining pressure","To filter the extinguishing agent before discharge"],a:0,e:"A fusible plug (thermal discharge device) is designed to melt and automatically discharge the extinguishing agent if the container is exposed to excessive heat, preventing a dangerous pressure buildup and potential explosive rupture of the container."},
 ,
 {q:"What is the purpose of a check valve installed in a hydraulic system's pressure line near a component such as a landing gear actuator?",o:["To maintain pressure in the actuator (preventing backflow) even if system pressure is lost elsewhere, helping hold the gear in position","To increase the flow rate to the actuator beyond the pump's normal output","To filter contaminants specifically at that actuator location","To provide electrical bonding for that component"],a:0,e:"A check valve near a critical actuator (such as landing gear) can maintain pressure in that actuator by preventing backflow, helping hold the gear in the commanded position even if system pressure is lost elsewhere in the circuit."},
@@ -697,6 +854,8 @@ m1113b: [
 {q:"What color disc is typically used on a fire extinguisher discharge indicator to show that the extinguishing agent has been thermally discharged (discharged due to excessive heat rather than intentionally by the crew)?",o:["Green disc","Red disc (thermal discharge indicator)","Blue disc","Black disc"],a:1,e:"A red disc thermal discharge indicator shows that a fire extinguisher container discharged due to excessive heat (a safety/overpressure relief event), as distinct from a yellow disc indicating a normal, intentional discharge by the crew."},
 ],
 m17: [
+{q:"What is the purpose of a propeller pitch lock mechanism, found on some constant-speed propeller designs?",o:["To prevent the blade pitch from moving toward a lower (flatter) angle in the event of a loss of governor oil pressure, helping prevent a dangerous overspeed condition","To lock the propeller permanently at a fixed pitch with no further adjustment ever possible","To provide anti-icing to the propeller hub","To measure propeller vibration"],a:0,e:"A pitch lock mechanism prevents the blade pitch from moving toward a lower (flatter) angle if governor oil pressure is lost, helping prevent a dangerous propeller overspeed condition that could otherwise result from an uncontrolled pitch decrease."},
+,
 {q:"What is the general purpose of a propeller's counterweights, found on some constant-speed propeller designs?",o:["To use centrifugal force acting on the counterweights to help move the blades toward a particular pitch position (increase or decrease pitch), working with or against the governor's oil pressure","To provide the primary source of anti-icing heat","To balance the propeller statically only, with no role in pitch change","To measure propeller RPM directly"],a:0,e:"Counterweights on some constant-speed propeller designs use centrifugal force, as the propeller rotates, to help move the blades toward a particular pitch position (often toward high pitch/feather), working in combination with or against governor oil pressure to control blade angle."},
 ,
 {q:"What is the purpose of a spinner (propeller nose cone) installed over the propeller hub?",o:["To provide an aerodynamically smooth, low-drag fairing over the hub and blade root area, and sometimes to help direct cooling airflow to the engine","To provide the primary structural attachment of the blades to the hub","To store hydraulic fluid for pitch control","To provide anti-icing exclusively, with no aerodynamic function"],a:0,e:"A spinner (nose cone) provides an aerodynamically smooth, low-drag fairing over the propeller hub and blade root area, reducing drag, and on many installations also helps direct cooling airflow into the engine cowling."},
@@ -733,6 +892,8 @@ m17: [
 {q:"Who specifies the exact time interval for particular propeller inspections?",o:["The pilot, based on personal preference","The propeller manufacturer","There is no standard interval; inspections are optional","Only the engine manufacturer, never the propeller manufacturer"],a:1,e:"The exact time interval for particular propeller inspections is usually specified by the propeller manufacturer, though a regular daily visual inspection of blades, hubs, and related components is standard practice regardless of type."},
 ],
 m1415a: [
+{q:"What is the purpose of stage bleed air ports located at various stages within a multi-stage axial compressor?",o:["To extract compressor air at intermediate pressure/temperature stages for uses such as cabin pressurization, anti-icing, and pneumatic systems, without requiring air at full final compressor discharge pressure","To provide fuel injection at each compressor stage","To measure compressor blade vibration at each stage","To provide cooling exclusively to the combustion chamber"],a:0,e:"Stage bleed air ports extract compressor air at various intermediate pressure/temperature points, providing appropriately sized bleed air for uses such as cabin pressurization, anti-icing, and pneumatic systems without needing to use higher-pressure air from the final compressor discharge."},
+,
 {q:"What is the function of the accessory drive gearbox mounted externally on many gas turbine engines?",o:["To provide mechanical power (via a tower shaft driven by the high-pressure spool) to drive engine and aircraft accessories such as fuel pumps, oil pumps, hydraulic pumps, and generators","To provide the primary combustion function of the engine","To measure exhaust gas temperature","To store fuel for engine start"],a:0,e:"The external accessory drive gearbox, driven mechanically via a tower shaft from the high-pressure spool, provides rotational power to drive engine-mounted accessories such as fuel pumps, oil pumps, hydraulic pumps, and electrical generators."},
 ,
 {q:"What does the term \"N2\" typically refer to in a two-spool turbofan engine's instrumentation, as distinct from N1?",o:["The rotational speed (RPM), usually as a percentage of maximum, of the high-pressure spool (high-pressure compressor and its driving turbine)","The total number of turbine stages in the engine","The fuel-air ratio in the combustion chamber","The number of igniter plugs installed"],a:0,e:"N2 refers to the rotational speed (typically as a percentage of maximum) of the high-pressure spool — the high-pressure compressor and the turbine stage(s) that drive it — distinct from N1, which refers to the low-pressure spool/fan speed."},
@@ -763,6 +924,8 @@ m1415a: [
 {q:"What type of combustion chamber design, consisting of individual perforated liners within an outer case, is typical of turboshaft engines and APUs?",o:["Can-type combustion chamber","Annular combustion chamber only","Reverse-flow can-annular chamber exclusively","Direct-injection piston chamber"],a:0,e:"The can-type combustion chamber, typical of turboshaft engines and APUs, consists of an outer case housing a perforated, heat-resistant combustion chamber liner; the outer case can be removed to facilitate liner replacement."},
 ],
 m1415b: [
+{q:"What is the general purpose of a fuel filter bypass valve?",o:["To allow fuel to bypass a clogged filter element and continue flowing to the engine, preventing fuel starvation, at the cost of temporarily unfiltered fuel","To completely block fuel flow if the filter becomes clogged","To increase fuel pressure beyond the pump's normal output","To filter fuel more thoroughly than the primary filter element"],a:0,e:"A fuel filter bypass valve opens if the filter element becomes excessively clogged, allowing fuel to bypass the filter and continue flowing to the engine (preventing fuel starvation), at the cost of temporarily unfiltered fuel — a safety trade-off favoring continued engine operation."},
+,
 {q:"What is the general purpose of a fuel/hydraulic system's low-pressure warning light or indication?",o:["To alert the flight crew that fluid pressure has dropped below a safe operating value, indicating a potential system malfunction requiring attention","To indicate normal, expected operation with no need for crew action","To indicate that the system has too much pressure, not too little","To measure fluid temperature, unrelated to pressure"],a:0,e:"A low-pressure warning light alerts the flight crew that fluid pressure (fuel or hydraulic) has dropped below a safe operating value, indicating a potential system malfunction — such as a failed pump or a leak — that requires attention."},
 ,
 {q:"What is the purpose of a fuel-air control unit in older hydromechanical turbine fuel control systems?",o:["To combine air metering signals (representing engine airflow demand) with fuel metering, ensuring appropriate fuel flow for the current operating condition","To mix air directly with fuel spray inside the fuel line before the nozzles","To control cabin air conditioning exclusively","To measure oil temperature"],a:0,e:"A fuel-air control unit combines air metering signals (representing the engine's current airflow/power demand) with the fuel metering function, ensuring the fuel control delivers an appropriate fuel flow for the engine's current operating condition."},
@@ -791,6 +954,8 @@ m1415b: [
 {q:"What type of duct geometry is generally required at a turbine engine's air inlet for supersonic flight, in the section closest to the engine face?",o:["A converging duct throughout the entire inlet","A duct whose aft section increases in area, acting as a subsonic diffuser to slow supersonic incoming air to subsonic speed before it reaches the compressor","No duct at all is used on supersonic inlets","A duct that remains constant in cross-sectional area regardless of speed"],a:1,e:"For supersonic aircraft, the inlet duct's aft section increases in area to act as a subsonic diffuser, slowing the incoming air to subsonic speed before it reaches the compressor face, which requires subsonic flow to operate efficiently."},
 ],
 m1415c: [
+{q:"What is the general purpose of an engine's ignition switch \"BOTH\" position on a dual-magneto reciprocating engine?",o:["To fire both magneto/ignition systems simultaneously during normal operation, providing the redundancy and combustion efficiency benefits of dual ignition","To disable both magnetos simultaneously","To fire only the left magneto","To fire only the right magneto"],a:0,e:"The \"BOTH\" position on a dual-magneto ignition switch fires both magneto systems simultaneously during normal operation, providing the redundancy (in case one fails) and improved combustion efficiency benefits of dual ignition."},
+,
 {q:"What is the general purpose of an oil quantity/level sight gauge or dipstick on a reciprocating or turbine engine?",o:["To allow a technician to visually verify the oil quantity in the tank/sump is within the acceptable operating range before flight","To measure oil pressure directly","To measure oil temperature directly","To indicate the exact viscosity grade of the oil in use"],a:0,e:"An oil quantity sight gauge or dipstick allows a technician to visually verify that the oil quantity in the tank or sump is within the acceptable operating range before flight, an important part of the preflight/servicing check."},
 ,
 {q:"What is the purpose of an engine's starter/generator combination unit, as used on some turbine engines?",o:["A single unit that functions as a starter motor during engine start, then automatically switches to function as a generator once the engine is running and up to speed","A unit used only to start the engine, with no generating capability at all","A unit that can only generate electricity, with no starting function","A unit used exclusively on reciprocating engines, never turbines"],a:0,e:"A starter/generator is a single combined unit that functions as an electric starter motor to crank the engine during start, then automatically transitions to function as a generator, supplying electrical power once the engine is running at operating speed — saving weight compared to separate starter and generator units."},
@@ -818,6 +983,8 @@ m1415c: [
 {q:"On modern turbine engine oil filters, oil filtering elements made of fine stainless steel metal mesh are typically rated at approximately what micron size?",o:["25-35 microns","1,000-2,000 microns","0.001 microns","There is no standard micron rating used for oil filters"],a:0,e:"Fine stainless steel metal mesh oil filter elements on turbine engines are typically rated at approximately 25 to 35 microns, providing effective filtration of contaminants from the recirculating oil."},
 ],
 m1415d: [
+{q:"What is the general purpose of comparing successive oil analysis (SOAP) results over time, rather than relying on a single sample?",o:["A single sample provides limited information; tracking the trend over multiple samples reveals whether wear metal levels are increasing, which is a stronger indicator of developing problems than any single reading","A single sample is always sufficient and trending provides no additional value","Oil analysis results are never comparable between samples","Trending is only useful for turbine engines, never reciprocating engines"],a:0,e:"A single oil analysis sample provides limited information on its own; tracking results over multiple successive samples reveals whether wear metal levels are trending upward, which is a much stronger indicator of a developing internal problem than any single reading in isolation."},
+,
 {q:"Why is it important to follow the manufacturer's specified cool-down period before shutting down a turbine engine after high-power operation?",o:["To allow the turbine section to cool more gradually and evenly, reducing thermal stress and the risk of distortion or damage from rapid temperature change","Cool-down periods are unnecessary and only add wasted time to the shutdown sequence","Cool-down periods are required only for reciprocating engines, never turbines","A cool-down period is only relevant to reduce noise near the airport"],a:0,e:"A specified cool-down period at reduced power before shutdown allows the turbine section to cool more gradually and evenly, reducing thermal stress that could otherwise cause distortion or damage from an abrupt temperature change following high-power operation."},
 ,
 {q:"What is the general purpose of documenting borescope inspection findings with photographs or detailed written descriptions, rather than relying on memory alone?",o:["To create a reliable record for trend monitoring, comparison at future inspections, and to support maintenance/engineering decisions about repair or continued operation","Photographic documentation is not useful for aviation maintenance purposes","Written descriptions are legally prohibited during borescope inspections","Trend monitoring cannot use borescope findings, only oil analysis data"],a:0,e:"Documenting borescope findings with photographs and detailed written descriptions creates a reliable record for future comparison (trend monitoring), supporting maintenance and engineering decisions about whether a finding requires repair, continued monitoring, or is within acceptable limits."},
@@ -863,6 +1030,51 @@ const chapterMeta = [
   {id:'m1415d', tag:'M14/15', title:'Engine Removal, Fire Protection & Maintenance'}
 ];
 
+/* Real EASA Part-66 exam lengths (Regulation (EU) 2023/989, Appendix II).
+   Figures for M11/13 (b2) and M17 are approximate where the exact current
+   figure could not be confirmed — flagged with approx:true. */
+const examMeta = [
+  {id:'exam_m1', tag:'M1', title:'Mathematics', sources:['m1'], len:{b11:32, b2:32}},
+  {id:'exam_m2', tag:'M2', title:'Physics', sources:['m2'], len:{b11:52, b2:52}},
+  {id:'exam_m3', tag:'M3', title:'Electrical Fundamentals', sources:['m3'], len:{b11:52, b2:52}},
+  {id:'exam_m45', tag:'M4/5', title:'Electronics & Digital Techniques', sources:['m45'], len:{b11:60, b2:112}},
+  {id:'exam_m6', tag:'M6', title:'Materials & Hardware', sources:['m6'], len:{b11:80, b2:60}},
+  {id:'exam_m7', tag:'M7', title:'Maintenance Practices', sources:['m7'], len:{b11:80, b2:60}},
+  {id:'exam_m8', tag:'M8', title:'Basic Aerodynamics', sources:['m8'], len:{b11:24, b2:24}},
+  {id:'exam_m9', tag:'M9', title:'Human Factors', sources:['m9'], len:{b11:28, b2:28}},
+  {id:'exam_m1113', tag:'M11/13', title:'Structures & Systems (full module)', sources:['m1113a','m1113b'], len:{b11:140, b2:100}, approx:true},
+  {id:'exam_m17', tag:'M17', title:'Propeller', sources:['m17'], len:{b11:20, b2:null}, approx:true, b1only:true},
+  {id:'exam_m1415', tag:'M14/15', title:'Engine / Propulsion (full module)', sources:['m1415a','m1415b','m1415c','m1415d'], len:{b11:92, b2:32}},
+];
+
+/* ====================== PROFILE ====================== */
+const PROFILE_KEY = 'amtg_profile';
+function getProfile(){ return localStorage.getItem(PROFILE_KEY) || 'b11'; }
+function toggleProfile(){
+  const p = getProfile() === 'b11' ? 'b2' : 'b11';
+  localStorage.setItem(PROFILE_KEY, p);
+  renderHome();
+}
+
+/* ====================== TOPIC STATS ====================== */
+const TOPIC_STATS_KEY = 'amtg_topic_stats';
+function loadTopicStats(){
+  try{ return JSON.parse(localStorage.getItem(TOPIC_STATS_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveTopicStats(stats){
+  localStorage.setItem(TOPIC_STATS_KEY, JSON.stringify(stats));
+}
+function recordTopicResults(moduleId, moduleTitle, answers){
+  const stats = loadTopicStats();
+  answers.forEach(a=>{
+    const topic = a.q.t || moduleTitle;
+    const key = moduleId + '|' + topic;
+    if(!stats[key]) stats[key] = {correct:0, wrong:0, moduleTag:'', topic:topic};
+    if(a.isCorrect) stats[key].correct++; else stats[key].wrong++;
+  });
+  saveTopicStats(stats);
+}
+
 /* ====================== APP STATE ====================== */
 let currentChapter = null;
 let currentQuestions = [];
@@ -897,6 +1109,9 @@ function shuffle(arr){
 /* ====================== HOME SCREEN ====================== */
 function renderHome(){
   const scores = loadScores();
+  const profile = getProfile();
+  document.getElementById('profileToggle').textContent = profile === 'b11' ? 'Profile: B1.1 ⇄' : 'Profile: B2 ⇄';
+
   const listEl = document.getElementById('chapterList');
   listEl.innerHTML = '';
   let total = 0;
@@ -915,18 +1130,54 @@ function renderHome(){
     div.innerHTML = `
       <div class="chapter-info">
         <div class="chapter-title"><span class="modtag">${ch.tag}</span>${ch.title}</div>
-        <div class="chapter-meta">${qs.length} questions</div>
+        <div class="chapter-meta">${qs.length} questions in bank</div>
       </div>
       <div class="chapter-score">${scoreHtml}</div>
     `;
     listEl.appendChild(div);
   });
   document.getElementById('totalQCount').textContent = total + ' total questions';
+
+  const examEl = document.getElementById('examList');
+  examEl.innerHTML = '';
+  examMeta.forEach(ex=>{
+    const pool = ex.sources.reduce((sum,id)=>sum+((quizData[id]||[]).length),0);
+    const wantLen = ex.len[profile];
+    if(wantLen === null || wantLen === undefined){
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.style.opacity = '0.5';
+      div.innerHTML = `<div class="chapter-title"><span class="modtag">${ex.tag}</span>${ex.title}</div><div class="chapter-meta">Not applicable to the ${profile==='b11'?'B1.1':'B2'} profile</div>`;
+      examEl.appendChild(div);
+      return;
+    }
+    const actualLen = Math.min(wantLen, pool);
+    const scoreKey = 'run_' + ex.id;
+    const best = scores[scoreKey];
+    let scoreHtml = '<span class="score-none">Not attempted</span>';
+    if(best !== undefined){
+      const cls = best >= 75 ? 'score-pass' : 'score-fail';
+      scoreHtml = `<span class="${cls}">${best}%</span>`;
+    }
+    const div = document.createElement('div');
+    div.className = 'card chapter-card';
+    div.onclick = ()=>startExam(ex.id);
+    const shortfall = wantLen > pool ? ` (bank has only ${pool} so far)` : '';
+    div.innerHTML = `
+      <div class="chapter-info">
+        <div class="chapter-title"><span class="modtag">${ex.tag}</span>${ex.title}${ex.approx?' *':''}</div>
+        <div class="chapter-meta">${actualLen} questions, pass mark 75%${shortfall}</div>
+      </div>
+      <div class="chapter-score">${scoreHtml}</div>
+    `;
+    examEl.appendChild(div);
+  });
 }
 
 function goHome(){
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-stats').classList.add('hidden');
   document.getElementById('screen-home').classList.remove('hidden');
   renderHome();
 }
@@ -937,13 +1188,90 @@ function confirmExit(){
   }
 }
 
+/* ====================== STATS SCREEN ====================== */
+function goStats(){
+  document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-stats').classList.remove('hidden');
+  renderStats();
+}
+
+function renderStats(){
+  const stats = loadTopicStats();
+  const body = document.getElementById('statsBody');
+  const rows = Object.keys(stats).map(key=>{
+    const [modId, topic] = key.split('|');
+    const s = stats[key];
+    const attempts = s.correct + s.wrong;
+    const accuracy = attempts ? Math.round((s.correct/attempts)*100) : 0;
+    const modTag = (chapterMeta.find(c=>c.id===modId) || {}).tag || modId.replace(/^run_/,'').replace(/^exam_/,'').toUpperCase();
+    return {modTag, topic, attempts, accuracy, wrong:s.wrong};
+  }).filter(r=>r.attempts >= 3);
+
+  if(rows.length === 0){
+    body.innerHTML = '<div class="card" style="text-align:center;color:var(--sub);">Not enough data yet. Answer at least a few questions on the same topic (Practice or Exam mode) to see your weak spots here.</div>';
+    return;
+  }
+  rows.sort((a,b)=> a.accuracy - b.accuracy);
+  const weakest = rows.slice(0,5);
+  let html = `<div class="card"><div class="qmeta" style="margin-bottom:8px;">Based on ${rows.reduce((s,r)=>s+r.attempts,0)} answered questions across ${rows.length} topics.</div>`;
+  html += `<div class="qtext" style="font-size:0.95rem;">You seem weakest on:</div></div>`;
+  weakest.forEach(r=>{
+    const cls = r.accuracy >= 75 ? 'score-pass' : 'score-fail';
+    html += `<div class="card">
+      <div class="chapter-title"><span class="modtag">${r.modTag}</span>${r.topic}</div>
+      <div class="chapter-meta">${r.attempts} answered · <span class="${cls}">${r.accuracy}% correct</span> · ${r.wrong} wrong</div>
+    </div>`;
+  });
+  if(rows.length > 5){
+    html += `<div class="section-label">All tracked topics</div>`;
+    rows.slice(5).forEach(r=>{
+      const cls = r.accuracy >= 75 ? 'score-pass' : 'score-fail';
+      html += `<div class="card">
+        <div class="chapter-title"><span class="modtag">${r.modTag}</span>${r.topic}</div>
+        <div class="chapter-meta">${r.attempts} answered · <span class="${cls}">${r.accuracy}% correct</span></div>
+      </div>`;
+    });
+  }
+  body.innerHTML = html;
+}
+
 /* ====================== QUIZ ====================== */
+let examMode = false;
+let examPassMargin = PASS_MARGIN;
+let currentModuleTitle = '';
+
 function startQuiz(chapterId){
   currentChapter = chapterId;
+  examMode = false;
+  examPassMargin = PASS_MARGIN;
   const raw = quizData[chapterId] || [];
   currentQuestions = shuffle(raw);
   currentIndex = 0;
   userAnswers = [];
+  currentModuleTitle = (chapterMeta.find(c=>c.id===chapterId)||{}).title || chapterId;
+  document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  renderQuestion();
+}
+
+function startExam(examId){
+  const ex = examMeta.find(e=>e.id===examId);
+  if(!ex) return;
+  const profile = getProfile();
+  const wantLen = ex.len[profile];
+  if(wantLen === null || wantLen === undefined){ return; }
+  let pool = [];
+  ex.sources.forEach(id=>{ pool = pool.concat(quizData[id] || []); });
+  const shuffled = shuffle(pool);
+  const len = Math.min(wantLen, shuffled.length);
+  currentChapter = 'run_' + ex.id;
+  examMode = true;
+  examPassMargin = 0.75;
+  currentQuestions = shuffled.slice(0, len);
+  currentIndex = 0;
+  userAnswers = [];
+  currentModuleTitle = ex.title;
   document.getElementById('screen-home').classList.add('hidden');
   document.getElementById('screen-result').classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
@@ -951,7 +1279,12 @@ function startQuiz(chapterId){
 }
 
 function retryQuiz(){
-  startQuiz(currentChapter);
+  if(examMode){
+    const exId = currentChapter.replace(/^run_/, '');
+    startExam(exId);
+  } else {
+    startQuiz(currentChapter);
+  }
 }
 
 function renderQuestion(){
@@ -1018,14 +1351,17 @@ function showResult(){
   const correctCount = userAnswers.filter(a=>a.isCorrect).length;
   const total = userAnswers.length;
   const pct = Math.round((correctCount/total)*100);
-  const passed = pct >= PASS_MARGIN*100;
+  const passMarginPct = examPassMargin*100;
+  const passed = pct >= passMarginPct;
   saveScore(currentChapter, pct);
+  recordTopicResults(currentChapter, currentModuleTitle, userAnswers);
 
   const chMeta = chapterMeta.find(c=>c.id===currentChapter);
-  document.getElementById('resultChapterName').textContent = `${chMeta.tag} — ${chMeta.title}`;
+  const displayTag = examMode ? (examMeta.find(e=>('run_'+e.id)===currentChapter)||{}).tag || '' : (chMeta||{}).tag || '';
+  document.getElementById('resultChapterName').textContent = (examMode ? '[Exam Sim] ' : '') + `${displayTag} — ${currentModuleTitle}`;
   document.getElementById('resultPct').textContent = pct + '%';
   document.getElementById('resultLabel').textContent = passed ? 'PASSED ✓' : 'NOT PASSED';
-  document.getElementById('resultDetail').textContent = `${correctCount} correct out of ${total} (pass mark: 90%)`;
+  document.getElementById('resultDetail').textContent = `${correctCount} correct out of ${total} (pass mark: ${Math.round(passMarginPct)}%)`;
   document.getElementById('resultBox').className = 'card resultbig ' + (passed ? 'pass' : 'fail');
 
   const reviewWrap = document.getElementById('reviewSection');
