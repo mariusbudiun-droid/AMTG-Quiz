@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AMTG Quiz</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f1720">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0f1720; --card:#182533; --card2:#1f2f40; --text:#e8eef4; --sub:#93a4b8;
+    --accent:#3ea6ff; --good:#3ecf8e; --bad:#ff5d5d; --warn:#ffb454; --border:#2a3b4d;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px;}
+  h1{font-size:1.3rem;margin:6px 0 2px;}
+  h2{font-size:1.05rem;margin:0 0 12px;color:var(--sub);font-weight:500;}
+  .topbar{position:sticky;top:0;background:var(--bg);padding-top:10px;padding-bottom:8px;z-index:5;border-bottom:1px solid var(--border);margin-bottom:14px;}
+  .backbtn{background:none;border:none;color:var(--accent);font-size:1rem;padding:6px 0;cursor:pointer;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+  .chapter-card{display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s;}
+  .chapter-card:active{background:var(--card2);}
+  .chapter-info{flex:1;}
+  .chapter-title{font-weight:600;font-size:0.98rem;margin-bottom:3px;}
+  .chapter-meta{color:var(--sub);font-size:0.82rem;}
+  .chapter-score{font-size:0.85rem;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--card2);white-space:nowrap;margin-left:10px;}
+  .score-pass{color:var(--good);}
+  .score-fail{color:var(--bad);}
+  .score-none{color:var(--sub);}
+  .progressbar{height:8px;background:var(--card2);border-radius:6px;overflow:hidden;margin:12px 0;}
+  .progressfill{height:100%;background:var(--accent);transition:width .2s;}
+  .qtext{font-size:1.05rem;line-height:1.45;margin-bottom:16px;font-weight:500;}
+  .qmeta{color:var(--sub);font-size:0.82rem;margin-bottom:6px;}
+  .option{display:block;width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);color:var(--text);padding:13px 14px;border-radius:10px;margin-bottom:10px;font-size:0.97rem;cursor:pointer;line-height:1.35;}
+  .option:active{background:#243646;}
+  .option.selected{border-color:var(--accent);background:#1c3040;}
+  .option.correct{border-color:var(--good);background:#123326;}
+  .option.wrong{border-color:var(--bad);background:#331616;}
+  .btn{display:block;width:100%;background:var(--accent);color:#04121c;border:none;padding:14px;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px;}
+  .btn:disabled{opacity:.4;}
+  .btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+  .btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent);}
+  .resultbig{text-align:center;padding:20px 10px;}
+  .resultpct{font-size:3rem;font-weight:800;margin:6px 0;}
+  .resultlabel{font-size:1.1rem;font-weight:700;margin-bottom:4px;}
+  .pass .resultpct, .pass .resultlabel{color:var(--good);}
+  .fail .resultpct, .fail .resultlabel{color:var(--bad);}
+  .explbox{margin-top:10px;padding:12px 14px;background:var(--card2);border-left:3px solid var(--warn);border-radius:8px;font-size:0.9rem;line-height:1.45;color:var(--sub);}
+  .reviewq{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .reviewq:last-child{border-bottom:none;}
+  .tag{display:inline-block;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-bottom:8px;}
+  .tag.ok{background:#123326;color:var(--good);}
+  .tag.no{background:#331616;color:var(--bad);}
+  .footer-note{color:var(--sub);font-size:0.8rem;text-align:center;margin-top:20px;line-height:1.5;}
+  .badge-all{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .stat-chip{background:var(--card2);border-radius:20px;padding:6px 12px;font-size:0.8rem;color:var(--sub);}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- SCHERMATA SELEZIONE CAPITOLI -->
+  <div id="screen-home">
+    <h1>✈️ AMTG Quiz</h1>
+    <h2>Aviation Maintenance Technician Handbook - General</h2>
+    <div class="badge-all">
+      <div class="stat-chip" id="totalQCount">-- domande totali</div>
+      <div class="stat-chip">Soglia superamento: 90%</div>
+    </div>
+    <div id="chapterList"></div>
+    <div class="footer-note">Tocca un capitolo per iniziare. Il punteggio migliore di ogni capitolo resta salvato sul telefono.</div>
+  </div>
+
+  <!-- SCHERMATA QUIZ -->
+  <div id="screen-quiz" class="hidden">
+    <div class="topbar">
+      <button class="backbtn" onclick="confirmExit()">← Capitoli</button>
+    </div>
+    <div class="qmeta" id="quizProgressText"></div>
+    <div class="progressbar"><div class="progressfill" id="progressFill"></div></div>
+    <div class="card">
+      <div class="qtext" id="qText"></div>
+      <div id="optionsList"></div>
+    </div>
+    <button class="btn" id="nextBtn" disabled onclick="nextQuestion()">Conferma risposta</button>
+  </div>
+
+  <!-- SCHERMATA RISULTATO -->
+  <div id="screen-result" class="hidden">
+    <div class="topbar">
+      <button class="backbtn" onclick="goHome()">← Capitoli</button>
+    </div>
+    <div class="card resultbig" id="resultBox">
+      <div class="chapter-meta" id="resultChapterName"></div>
+      <div class="resultpct" id="resultPct"></div>
+      <div class="resultlabel" id="resultLabel"></div>
+      <div class="chapter-meta" id="resultDetail"></div>
+    </div>
+    <button class="btn" onclick="retryQuiz()">Riprova questo capitolo</button>
+    <button class="btn secondary" onclick="goHome()">Torna ai capitoli</button>
+    <div id="reviewSection"></div>
+  </div>
+
+</div>
+
+<script>
+/* ====================== DATI DOMANDE ====================== */
+const quizData = {
+ch1: [
+{q:"The \"risk diamond\" on chemical safety labels has 4 colors. What does RED represent?",o:["Flammability","Reactivity","Health hazard","Special hazard"],a:0,e:"On the 4-color risk diamond: red = flammability, yellow = reactivity, blue = health, white = special hazard (e.g. RAD for radiation, W with a line through it for water reactivity)."},
+{q:"On the risk diamond, a number from 0 to 4 indicates the hazard level. What does the number 4 mean?",o:["No hazard","Moderate hazard","Very hazardous material","Unclassified material"],a:2,e:"The scale runs from 0 (little or no hazard) to 4, meaning the material is very hazardous."},
+{q:"Which three elements are required for a fire to occur?",o:["Fuel, heat, oxygen","Fuel, water, pressure","Heat, electricity, wind","Oxygen, humidity, pressure"],a:0,e:"The fire triangle requires fuel, heat, and oxygen. Removing any one of these three elements extinguishes the fire."},
+{q:"A Class B fire involves:",o:["Ordinary combustible materials like wood and paper","Flammable or combustible liquids such as gasoline and solvents","Energized electrical equipment","Flammable metals such as magnesium"],a:1,e:"NFPA classes: A = ordinary combustibles (wood, paper, cloth); B = flammable/combustible liquids; C = energized electrical equipment; D (not officially an NFPA class) = flammable metals."},
+{q:"Why must water-type extinguishers NEVER be used on a Class D (metal) fire?",o:["Water is never available in the hangar","The cooling effect causes an explosive expansion of the molten metal","Water reacts to produce harmless toxic fumes","Water extinguishers are too heavy to carry"],a:1,e:"Metals in Class D fires burn at extremely high temperatures; the cooling effect of water (or CO2) causes an explosive expansion of the metal."},
+{q:"CO2 extinguishers are effective on which classes of fire?",o:["Class A only","Class A, B, and C","Class D only","Class B and D"],a:1,e:"CO2 extinguishes by depriving the fire of oxygen and is effective on A, B, and C, but should never be used on Class D (metal) fires due to the risk of explosive expansion."},
+{q:"Which type of extinguisher is most specifically recommended for Class D (metal) fires?",o:["Water extinguisher","CO2 extinguisher","Dry powder extinguisher","Foam extinguisher"],a:2,e:"Dry powder extinguishers, while also effective on B and C, are the preferred method for metal fires (Class D)."},
+{q:"When using a fire extinguisher, roughly how far back from the base of the flames should you stand?",o:["2 feet","8 feet","20 feet","50 feet"],a:1,e:"Standard procedure is to stand back about 8 feet, aim at the base of the fire, squeeze the lever, and sweep side to side."},
+{q:"Which knot is recommended for aircraft tie-down because it's anti-slip and easy to untie?",o:["Figure-eight knot","Bowline knot","Simple slip knot","Butterfly knot"],a:1,e:"The bowline is identified in the handbook as an anti-slip knot that is quick to tie and easy to untie, ideal for tie-down."},
+{q:"Why should a tie-down rope NEVER be tied to a lift strut?",o:["Because the strut is too smooth to hold the knot","Because it can bend the strut if the rope slips to a point with no slack","Because the strut is electrically conductive","Because regulations explicitly forbid it in every case"],a:1,e:"If the rope slips to a point where there is no slack, it can exert enough force to bend the strut; that's why dedicated tie-down rings are used instead."},
+{q:"What wind speed can a properly tied-down helicopter generally withstand?",o:["About 20 mph","About 65 mph","About 120 mph","No limit if well secured"],a:1,e:"The handbook states that a properly tied-down helicopter can generally sustain winds up to approximately 65 mph."},
+{q:"What is a \"dead-man\" in the context of tying down ski planes?",o:["A specific type of metal anchor for snow","An object (pipe, log, etc.) buried in the ice/snow that a rope is attached to","An automatic safety pilot device","An electronic wind alarm device"],a:1,e:"A dead-man is any item at hand (a piece of pipe, a log, etc.) that a rope is attached to and that is buried in a trench in snow or ice, then wetted and allowed to freeze."},
+{q:"Before starting a radial engine that has been shut down for more than 30 minutes, what should be done to detect a possible hydraulic lock?",o:["Check the oil level with the dipstick","Turn the propeller by hand through 3-4 complete revolutions with the ignition OFF","Start the engine at low power for 10 seconds","Drain fuel from the lower cylinders with no preliminary checks"],a:1,e:"With the ignition switch OFF, the propeller is turned by hand through 3-4 complete revolutions: abnormal effort or an abrupt stop indicates a hydraulic lock (liquid in a cylinder)."},
+{q:"If a hydraulic lock is detected while manually rotating the propeller, what should you NEVER do?",o:["Remove a spark plug from the lower cylinders","Turn the propeller in the direction opposite to normal rotation","Call for technical assistance","Wait before trying again"],a:1,e:"Turning the propeller backward tends to inject the liquid from the cylinder into the intake pipe, from which it can be drawn back into the cylinder, causing a lock on the next start attempt."},
+{q:"During engine start, the \"fireguard\" should be equipped with what type and minimum capacity of fire extinguisher?",o:["A 10-pound foam extinguisher","A CO2 extinguisher of at least 5 pounds","A 2-gallon water extinguisher","A 1-pound dry powder extinguisher"],a:1,e:"The fireguard, familiar with the engine's induction system, should have a CO2 extinguisher of at least 5-pound capacity, stationed in view of the pilot."},
+{q:"During hand propping, when should the person at the controls turn on the ignition switch?",o:["Immediately, before any communication","Only after the person swinging the propeller has called \"contact\"","Halfway through the propeller rotation","It should never be turned on manually in this procedure"],a:1,e:"The switch must never be turned on before \"contact\" is called: the correct sequence is check-confirm, then \"contact\" is called, and only then is the switch turned on."},
+{q:"During hand propping, what fundamental precaution must always be observed when touching the propeller?",o:["Always assume the ignition is ON, even if the switch appears to be OFF","Always wear thick insulated gloves","Only touch the propeller when the engine is warm","Always approach from behind the propeller"],a:0,e:"A faulty ignition switch can read OFF but still allow current to flow in the primary magneto circuit: you must always assume the ignition is on."},
+{q:"What is the maximum continuous cranking time for the starter on a reciprocating engine before a cooling pause is required?",o:["30 seconds","1 minute, followed by a 3-5 minute cooling period","5 continuous minutes","No limit if the starter is new"],a:1,e:"The starter should not be cranked continuously for more than 1 minute, with a 3-5 minute cooling pause between attempts to avoid overheating and burning out the starter."},
+{q:"In a \"free turbine\" type turboprop engine, what happens to the propeller during start?",o:["It immediately spins at high speed","It stays in the feathered position and only turns as the gas generator accelerates","It must be turned manually by the operator","It fully disconnects from the hub during start"],a:1,e:"In a free turbine engine there is no direct mechanical connection between the gas generator and the power turbine connected to the propeller: the propeller stays feathered and only turns as the gas generator accelerates."},
+{q:"When approaching a helicopter with the rotor blades turning, which safety rule is correct?",o:["Always approach from behind so the pilot can't see you","Never approach a single-rotor helicopter from the rear, since the tail rotor is invisible while turning","Only approach if the blades are at 50% of normal speed","Move from one side to the other by walking around the tail"],a:1,e:"A spinning tail rotor is essentially invisible: you should never approach a single-rotor helicopter from the rear, and to move from one side to the other you always go around the nose, never around the tail."},
+{q:"What is FOD (Foreign Object Damage), and why is it especially dangerous near turbine engines?",o:["It's a type of internal engine corrosion unrelated to external objects","It's damage caused by loose objects; turbine engines create a low-pressure area in front of them that draws in loose objects","It's a manufacturing defect in turbine components","It only refers to lightning strike damage"],a:1,e:"FOD is any damage caused by a loose foreign object (tools, bolts, debris). Turbine engines generate a low-pressure area at the intake that can draw in loose objects with destructive force."},
+{q:"Which two psychological factors are identified as the major causes of accidents when working with electricity?",o:["Tiredness and hunger","Fear and overconfidence","Being in a hurry and distraction","Excessive cold and heat"],a:1,e:"The handbook identifies fear and overconfidence as the two main factors causing electricity-related accidents; lack of respect often stems from lack of knowledge."},
+{q:"When grinding with a bench grinder, why should you never stand directly in the arc of the wheel's rotation?",o:["Because the noise is too loud in that position","In case the wheel explodes during use","Because it limits visibility of the workpiece","It isn't prohibited, it's just an aesthetic recommendation"],a:1,e:"Grinding wheels can explode during use (e.g. due to undetected defects); this is why eye protection is required and you should never stand in the wheel's arc of rotation."},
+{q:"Before welding in a hangar, what is the minimum distance other aircraft must be from the welding operation?",o:["10 feet","35 feet","100 feet","No minimum distance if they are shut down"],a:1,e:"Hangar welding precautions require that no aircraft be within 35 feet of the welding operation, along with other measures such as keeping the area free of flammable materials."},
+],
+ch2: [
+{q:"Where are today's FAA regulations governing aircraft found?",o:["Title 49 CFR","Title 14 of the Code of Federal Regulations (14 CFR)","Title 21 CFR","Title 91 US Code"],a:1,e:"FAA regulations governing aircraft are found in Title 14 of the Code of Federal Regulations (14 CFR), divided into five volumes."},
+{q:"Why did the FAA start using \"14 CFR part XX\" instead of the older acronym \"FAR\"?",o:["Because FAR was considered offensive","Because FAR (Federal Acquisition Regulations, Title 48) created confusion with Federal Aviation Regulations","Because the term FAR no longer legally existed","To align with European EASA regulations"],a:1,e:"The acronym FAR is shared with the Federal Acquisition Regulations (Title 48), causing ambiguity; that's why the FAA uses the explicit \"14 CFR part XX\" designation."},
+{q:"The three primary regulations governing aircraft airworthiness are Part 21, Part 43, and:",o:["Part 61","Part 91","Part 145","Part 147"],a:1,e:"The three primary regulations are: 14 CFR Part 21 (Certification), Part 43 (Maintenance), and Part 91 (General Operating and Flight Rules)."},
+{q:"What does 14 CFR Part 43 govern?",o:["Requirements to become a commercial pilot","Maintenance, preventive maintenance, rebuilding, and alterations","Type certification of aircraft","Air traffic control rules"],a:1,e:"Part 43 covers Maintenance, Preventive Maintenance, Rebuilding, and Alterations — it's the regulatory core for maintenance technicians."},
+{q:"According to 14 CFR Part 3, what does \"airworthy\" mean?",o:["The aircraft has passed its last annual inspection","The aircraft conforms to its type design and is in a condition for safe operation","The aircraft is less than 10 years old","The aircraft is insured and registered"],a:1,e:"The official definition of \"airworthy\" is that the aircraft conforms to its type design and is in a condition for safe operation."},
+{q:"What are SFARs (Special Federal Aviation Regulations)?",o:["Permanent regulations that replace standard CFRs","Regulations focused on a specific situation, usually with a limited period of effectiveness","Documents reserved only for military airlines","The FAA's internal guidelines for its own inspectors"],a:1,e:"SFARs are regulations issued by the FAA for specific, unique situations, generally with a limited length of time for effectiveness."},
+{q:"What are Airworthiness Directives (ADs)?",o:["Optional recommendations from the manufacturer","Legally binding directives issued when an unsafe condition is identified on an aviation product","Advertising bulletins from parts suppliers","Manufacturer warranty certificates"],a:1,e:"ADs are legally binding documents issued by the FAA when an unsafe condition is identified in an aircraft, engine, propeller, or component, and compliance is mandatory."},
+{q:"What are FAA Advisory Circulars (ACs)?",o:["Mandatory regulatory documents equivalent to ADs","Non-regulatory informational/guidance material to help apply the regulations","Aircraft registration forms","Special airworthiness certificates"],a:1,e:"Advisory Circulars provide non-regulatory information and guidance (not binding in themselves) to help operators understand and apply regulatory requirements."},
+{q:"What is a Supplemental Type Certificate (STC)?",o:["A certificate authorizing a change to the original type design of an already-certificated aircraft","The aircraft's birth certificate issued by the manufacturer","A temporary flight permit for testing","The certificate that replaces Form 337"],a:0,e:"An STC authorizes a modification (major alteration) to the type design of an already-certificated product, when the change significantly alters the original configuration or performance."},
+{q:"What does a Type Certificate Data Sheet (TCDS) contain?",o:["Only the maintenance history of a single aircraft","The approved specifications and operating limits of the certificated type design","A list of the aircraft's previous owners","Recommended maintenance rates"],a:1,e:"The TCDS describes the approved technical specifications and operating limits for a particular certificated type design (aircraft, engine, or propeller)."},
+{q:"Which FAA form is typically used to document a major repair or major alteration?",o:["FAA Form 8130-3","FAA Form 337","FAA Form 8050-3","FAA Form 8100-2"],a:1,e:"FAA Form 337 (Major Repair and Alteration) is used to document major repairs or alterations performed on an aircraft."},
+{q:"What does FAA Form 8100-2 (Standard Airworthiness Certificate) attest to?",o:["Ownership of the aircraft","The airworthiness of a type-certificated aircraft, required to be on board every civil aircraft","Completion of pilot training","The aircraft's insurance"],a:1,e:"The Standard Airworthiness Certificate indicates the aircraft's airworthiness (distinct from the registration certificate, which only indicates ownership) and must be visibly displayed on board."},
+{q:"What does FAA Form 8130-7 (Special Airworthiness Certificate), pink in color, attest to?",o:["Certificates for special categories such as Experimental or Special Flight Permit","Aircraft ownership only","Airframe & Powerplant mechanic certification","Payment of airport fees"],a:0,e:"Form 8130-7 (pink) covers special airworthiness categories, including Experimental, Special Flight Permit, and other special classes, distinct from the standard certificate."},
+{q:"Under 14 CFR Part 91, Section 91.417, for how long must TEMPORARY maintenance records be kept by the owner?",o:["Until the work is repeated/superseded or 1 year has passed","For the entire operational life of the aircraft","Only 30 days","Until the next sale of the aircraft"],a:0,e:"Temporary records (relating to maintenance, inspections, etc.) must be kept by the owner until the work is repeated or superseded, or in any case for at least 1 year after it was performed."},
+{q:"PERMANENT records under Section 91.417 typically include:",o:["Only fuel purchase receipts","Total time in service, status of life-limited parts, current inspection status, and applicable ADs","The names of passengers carried","The aircraft's original paint color"],a:1,e:"Permanent records include total time in service, current status of life-limited parts, time since last overhaul, current inspection status, and applicable ADs — and they transfer with the aircraft at time of sale."},
+{q:"Which FAA personnel does the maintenance technician mainly interact with in day-to-day work?",o:["Aircraft Certification Service (AIR) exclusively","Flight Standards Service (AFS) and the Flight Standards District Office (FSDO)","NASA","The Department of Transportation directly"],a:1,e:"The maintenance technician interacts mainly with personnel from the Flight Standards Service (AFS) and the local Flight Standards District Office (FSDO)."},
+{q:"What is a Special Airworthiness Information Bulletin (SAIB)?",o:["A binding regulatory document equivalent to an AD","A non-regulatory information tool to alert and educate the aviation community","The airworthiness certificate for experimental aircraft","An ownership registration form"],a:1,e:"An SAIB provides non-regulatory (non-binding) information and recommendations to alert the aviation community about a possible airworthiness concern."},
+{q:"An aircraft with a Special Airworthiness Certificate - Experimental (Form 8130-7), and no other type of certificate: does 14 CFR part 43 apply to its maintenance?",o:["Yes, always in the same way as a standard aircraft","No, part 43 does not apply in this specific case","Only for annual inspections","Only if the aircraft exceeds 2,000 pounds"],a:1,e:"If an aircraft's only airworthiness certificate has ever been the Special Airworthiness–Experimental one, 14 CFR part 43 does not apply to its maintenance, which instead follows the specific operating conditions of the experimental certificate."},
+{q:"What distinguishes S-LSA type Light Sport Aircraft from E-LSA?",o:["S-LSA are single-engine, E-LSA are twin-engine","S-LSA are factory-built, E-LSA are kit-built","S-LSA only fly during the day, E-LSA also at night","There is no substantial difference"],a:1,e:"Special Light-Sport Aircraft (SLSA) are factory-built, while Experimental Light-Sport Aircraft (ELSA) are kit-built by the buyer; this category was introduced in 2004."},
+{q:"What does 14 CFR Part 91, Subpart E require?",o:["Maintenance, preventive maintenance, and alteration rules for the owner/operator","Requirements for obtaining a commercial pilot license","Certification procedures for new aircraft types","Construction standards for airport runways"],a:0,e:"Subpart E of Part 91 covers Maintenance, Preventive Maintenance, and Alterations, defining the owner/operator's responsibilities."},
+{q:"Who CAN perform preventive maintenance on an aircraft under Part 43, besides a certificated mechanic?",o:["Anyone with access to the hangar","The pilot owner/operator of the aircraft, within defined limits (not on aircraft operated under part 121, 129, or 135)","Only the pilot's family members","No one else, only certificated mechanics"],a:1,e:"The pilot owner/operator may perform preventive maintenance on their own aircraft, provided it is not operated under part 121, 129, or 135, and within the list of allowed tasks."},
+{q:"When Form 337 is completed for a major repair/alteration, within how many hours of completion must a copy be sent to the local FSDO?",o:["24 hours","48 hours","7 days","30 days"],a:1,e:"The form must be completed in at least two copies: the original to the owner/operator and a copy to the local FSDO within 48 hours of completing the maintenance and RTS (Return to Service)."},
+{q:"What does Appendix D of 14 CFR Part 43 represent?",o:["The list of approved major alterations","The scope and detail of items to be included in Annual and 100-Hour inspections","The requirements for becoming an Inspection Authorization (IA)","Unit conversion tables"],a:1,e:"Appendix D of Part 43 specifies the scope and detail of items to be checked during Annual and 100-Hour inspections."},
+{q:"What is the Air Transport Association (ATA), and what is the iSpec 2200 system used for?",o:["A government agency that replaces the FAA for maintenance","An industry association; iSpec 2200 provides a standard for organizing technical manuals into numbered chapters","The organization that issues pilot licenses in the US","The body that certifies aviation fuels"],a:1,e:"ATA iSpec 2200 is an industry (non-government) standard defining the numbered chapter structure (ATA chapters) used in maintenance manuals, widely adopted across the industry."},
+],
+ch3: [
+{q:"To add or subtract two fractions with different denominators, what must be found first?",o:["The largest numerator","The least common denominator (LCD)","The square root of the denominators","The product of the numerators"],a:1,e:"Adding or subtracting fractions requires a common denominator; the least common denominator (LCD) is generally used."},
+{q:"In the proportion 2:3 = 4:6, what are the \"extremes\"?",o:["3 and 4","2 and 6","2 and 3","4 and 6"],a:1,e:"In a proportion, the first and last terms (2 and 6) are the extremes; the second and third (3 and 4) are the means. The product of the extremes always equals the product of the means."},
+{q:"In a proportion, what is always true about the product of the extremes and the product of the means?",o:["They are always different from each other","They are always equal to each other","Their sum is always 10","They have no relationship"],a:1,e:"This is a fundamental property of proportions: the product of the extremes always equals the product of the means (e.g. 2:3=4:6 → 2×6=12=3×4)."},
+{q:"If two gears have a gear ratio of 2:9, what is their speed ratio?",o:["2:9, the same as the gear ratio","9:2, the inverse of the gear ratio","2:2, always 1:1","Not calculable without the number of teeth"],a:1,e:"The speed ratio between two gears is always the inverse (opposite) of the gear ratio; with a gear ratio of 2:9, the speed ratio is 9:2."},
+{q:"What is the correct order of operations for algebraic equations, according to the handbook?",o:["Multiplication, Parentheses, Exponents, Division, Subtraction, Addition","Parentheses, Exponents, Multiplication, Division, Addition, Subtraction","Addition, Subtraction, Multiplication, Division, Parentheses, Exponents","Exponents, Parentheses, Division, Multiplication, Subtraction, Addition"],a:1,e:"The correct order is: 1) Parentheses, 2) Exponents, 3) Multiplication, 4) Division, 5) Addition, 6) Subtraction (equivalent to PEMDAS)."},
+{q:"The Pythagorean Theorem states that, in a right triangle, a² + b² = c². What does \"c\" represent?",o:["The shortest side of the triangle","The hypotenuse, the side opposite the right angle","The right angle itself","The sum of the interior angles"],a:1,e:"\"c\" always represents the hypotenuse, the longest side, opposite the right angle. \"a\" and \"b\" are the two legs."},
+{q:"A right triangle has legs of 7 and 9 inches. What is the approximate length of the hypotenuse?",o:["8 inches","11.4 inches","16 inches","4 inches"],a:1,e:"With a²+b²=c²: 7²+9²=49+81=130. c = √130 ≈ 11.4 inches."},
+{q:"Which trigonometric function is defined as the opposite side divided by the hypotenuse?",o:["Cosine","Sine","Tangent","Cotangent"],a:1,e:"Sine (sin) of an angle is defined as the ratio of the opposite side to the hypotenuse. Tangent is opposite/adjacent, cosine is adjacent/hypotenuse."},
+{q:"In an equilateral triangle, how many sides have the same length?",o:["None","Only 2","All 3","It depends on the angles"],a:2,e:"An equilateral triangle has all three sides of equal length (and all angles of 60°). An isosceles triangle has 2 equal sides, a scalene triangle has none."},
+{q:"The sum of the interior angles of any triangle is always equal to:",o:["90°","180°","270°","360°"],a:1,e:"In Euclidean geometry, the sum of the interior angles of a triangle is always 180°."},
+{q:"Which two symbols only does the binary number system use?",o:["1 and 2","0 and 1","A and B","+ and -"],a:1,e:"The binary system uses exclusively the digits 0 and 1, which is fundamental to how digital circuits operate (on/off switches)."},
+{q:"In the binary system, when converting a binary number to decimal, what is done with positions containing a 0?",o:["They are still added to the total","They are ignored; they don't contribute to the decimal value","They are multiplied by 2","They are subtracted from the total"],a:1,e:"Converting from binary to decimal, only the place values corresponding to the digit \"1\" are added; positions with \"0\" don't contribute to the total."},
+{q:"When a number is expressed in scientific notation, how is it typically written?",o:["As an improper fraction","As a number between 1 and 10 multiplied by a power of 10","Always as a negative number","As the square root of itself"],a:1,e:"Scientific notation expresses a number as a value between 1 and 10 multiplied by a power of 10 (e.g. 3.45 × 10³)."},
+{q:"In the metric system, which prefix indicates a multiplying factor of 1000?",o:["Centi","Milli","Kilo","Deci"],a:2,e:"The prefix \"kilo\" indicates a factor of 1000 (e.g. 1 kilogram = 1000 grams). \"Centi\" is 1/100, \"milli\" is 1/1000."},
+{q:"What is the formula for the area of a rectangle?",o:["Base × height / 2","Length × width","2 × (length + width)","Length² + width²"],a:1,e:"The area of a rectangle is calculated by multiplying length by width (a = l × w). Base × height / 2 is instead the formula for a triangle."},
+{q:"How is a triangle classified in which all three angles are less than 90°?",o:["Obtuse triangle","Right triangle","Acute triangle","Degenerate right triangle"],a:2,e:"A triangle with all angles less than 90° is classified as acute. A right triangle has one angle of exactly 90°."},
+{q:"To convert a fraction to a percentage, what is typically done?",o:["The numerator is multiplied by the denominator","The numerator is divided by the denominator and multiplied by 100","100 is subtracted from the numerator","The numerator and denominator are added together"],a:1,e:"To express a fraction as a percentage, divide the numerator by the denominator to get a decimal, then multiply by 100."},
+{q:"What does the exponent \"2\" represent in the expression x²?",o:["x multiplied by 2","x multiplied by itself (x × x)","The square root of x","x divided by 2"],a:1,e:"x² (x squared) means x multiplied by itself once, i.e., x × x. It's a specific case of a power."},
+{q:"What is the square root of 144?",o:["11","12","14","72"],a:1,e:"12 × 12 = 144, so the square root of 144 is 12."},
+{q:"To add signed numbers (positive and negative) of opposite sign, what is done?",o:["Their absolute values are always added","The smaller absolute value is subtracted from the larger, keeping the sign of the larger","The signs are always ignored","The result is always zero"],a:1,e:"When adding numbers of opposite sign, the smaller absolute value is subtracted from the larger, and the result takes the sign of the number with the larger absolute value."},
+{q:"In the conventional (US/English) measurement system, which unit is commonly used to measure short lengths in an aviation shop?",o:["The meter","The inch","The kilometer","The decimeter"],a:1,e:"The conventional US system uses inches, feet, and yards as length units; the inch is the most common unit for precision shop measurements."},
+],
+ch4: [
+{q:"Aircraft technical drawings are divided into three main classes. Which are they?",o:["Detail, assembly, installation","Electrical, mechanical, hydraulic","Manual, digital, hybrid","Draft, final, archived"],a:0,e:"The three main classes of drawings are: detail drawing, assembly drawing, and installation drawing."},
+{q:"What does a \"detail drawing\" describe?",o:["The complete aircraft assembly","A single part, with dimensions, shape, material, and manufacturing method","Only the general electrical schematic","The location of fuel tanks"],a:1,e:"A detail drawing describes a single part, specifying dimensions, shape, material, and manufacturing method to be used."},
+{q:"What is the primary purpose of an \"assembly drawing\"?",o:["To show a single isolated component","To show the relationship between the various parts that make up a multi-part object","To only list material costs","To replace the maintenance manual"],a:1,e:"An assembly drawing describes an object made up of two or more parts, with the primary purpose of showing how the various parts relate to each other."},
+{q:"In a sectional view, what distinguishes a \"full section\" from a \"half section\"?",o:["There is no practical difference","A full section cuts through the entire object, a half section shows only half in section and half as an exterior view","A half section is only used for metal objects","A full section is only used for electrical components"],a:1,e:"A full section cuts completely through the object to show internal construction; a half section, used on symmetrical objects, shows half in section and the other half as an exterior view."},
+{q:"Centerlines on a technical drawing are made up of:",o:["Short dashes, all the same length and closely spaced","Alternating long and short dashes","A thin continuous line","Isolated dots with no dashes"],a:1,e:"Centerlines are made up of alternating dashes, one long and one short, and they indicate the center of an object or part of an object."},
+{q:"Hidden lines, which indicate invisible edges or contours, are represented with:",o:["Short, evenly spaced dashes","A thick continuous line","A wavy line","Alternating dots and dashes like centerlines"],a:0,e:"Hidden lines are made up of short, evenly spaced dashes, and indicate edges or contours not visible in the current view."},
+{q:"What do phantom lines, made of one long dash and two short dashes, indicate?",o:["Edges cut with a tool","The alternate position of a part, or the relative position of a missing component","The routing of electrical wiring","Dimension lines"],a:1,e:"Phantom lines indicate the alternate position of parts of the object, or the relative position of a missing part, and are composed of one long dash followed by two short dashes."},
+{q:"In the Universal Numbering System for drawings, what does the first digit (1, 2, 4, or 5) of the six or seven-digit code indicate?",o:["The revision number","The size (format) of the drawing sheet","The year the drawing was produced","The draftsman's code"],a:1,e:"The first digit (1, 2, 4, or 5) of the universal code indicates the sheet size/format: for example, 1 corresponds to an 8½\"×11\" size, 2 to 11\"×17\"."},
+{q:"What are \"zone numbers\" on a technical drawing used for?",o:["To indicate the ambient working temperature","To help locate a specific point on the drawing, like coordinates on a map","To indicate the weight of the component","To classify the type of material used"],a:1,e:"Zone numbers work like the letters/numbers on the border of a map: by tracing imaginary horizontal and vertical lines from the given coordinates, a precise point on the drawing can be located."},
+{q:"On a technical drawing, where is the \"title block\" generally located?",o:["In the top left corner","In the bottom right corner, or as a strip along the bottom edge","Always in the center of the sheet","It is never shown on the drawing"],a:1,e:"The title block is typically located in the bottom right corner of the drawing, or as a strip extending almost the entire bottom edge of the sheet."},
+{q:"What does an orthographic projection show?",o:["A single 3D perspective view of the object","Several views (e.g. front, side, top) to show the exact size and shape of complex objects","Only the object's electrical schematic","A rasterized photograph of the component"],a:1,e:"Orthographic projection uses several standard views (front, side, top, etc.) to accurately represent the size and shape of complex objects."},
+{q:"How are distances between two holes generally dimensioned on a technical drawing?",o:["From the outer edge of one hole to the outer edge of the other","Center to center","Always in millimeters, never in inches","They are never dimensioned directly"],a:1,e:"Distances between holes are generally dimensioned from center to center, rather than from outside edge to outside edge."},
+{q:"What does a \"revolved section\", drawn directly on the exterior view, represent?",o:["A separate section on another sheet","The shape of the cross section of a part (e.g. the spoke of a wheel), rotated in place","An exploded view of the entire component","The path of internal electrical wiring"],a:1,e:"A revolved section shows, directly on the exterior view, the shape of the cross section of a specific part such as the spoke of a wheel, by rotating it into the plane of the drawing."},
+{q:"What does a flowchart show in the context of aircraft maintenance?",o:["Only the physical structure of the component","The logical sequence of events, decisions, or steps in a process","The path of fuel through the wing","Exact full-scale dimensions"],a:1,e:"Flowcharts show the logical sequence of events, decisions, or steps in a process, for example in fault diagnosis (troubleshooting)."},
+{q:"Dimensional tolerances on a drawing can be given in fractional or decimal form. When are decimal tolerances used?",o:["Only for plastic components","When very accurate dimensions are needed","Only on assembly drawings, never on details","Decimal tolerances are never used in aviation"],a:1,e:"Decimal tolerances are used when very accurate dimensions are required; fractional tolerances are sufficient when precise tolerances are not needed."},
+{q:"What do sectioning lines on a sectional view generally indicate?",o:["The type of material shown in section","The direction of the wind during flight","The component's serial number","The date the drawing was produced"],a:0,e:"Sectioning (hatching) lines vary their appearance/pattern based on the type of material represented in the sectional view."},
+{q:"When reading a drawing, what does the \"revision block\" typically represent?",o:["The list of materials used (bill of material)","The history of changes made to the drawing over time","Step-by-step assembly instructions","The code of the department that made the part"],a:1,e:"The revision block records the history of successive changes made to the original drawing, allowing its evolution over time to be tracked."},
+{q:"An \"installation drawing\" differs from an assembly drawing mainly because it:",o:["Shows how an assembly or component is mounted/positioned on a specific aircraft","Never contains dimensional values","Is used exclusively for electrical components","Is identical in every way to a detail drawing"],a:0,e:"An installation drawing shows how a component or assembly is placed and fastened within the aircraft, including the position references needed for assembly."},
+],
+ch5: [
+{q:"What are the four forces acting on an aircraft in flight?",o:["Lift, weight, thrust, drag","Speed, altitude, pressure, temperature","Friction, gravity, electricity, heat","Lift, thrust, density, humidity"],a:0,e:"The four fundamental forces of flight are: lift, weight, thrust, and drag. All are measured in pounds."},
+{q:"If an aircraft is accelerating in level flight, what can we say about the relationship between thrust and drag?",o:["Thrust is less than drag","Thrust is greater than drag","Thrust and drag are always equal","There is no relationship between the two forces during acceleration"],a:1,e:"When an aircraft accelerates, it means thrust exceeds drag; when it decelerates, the opposite is true."},
+{q:"Newton's First Law describes the principle of:",o:["Action and reaction","Inertia: a body at rest stays at rest, a body in motion stays in motion, unless acted on by an external force","Universal gravitation","Conservation of energy"],a:1,e:"Newton's first law is the law of inertia: a body tends to remain in its state of rest or uniform motion unless acted upon by an external force."},
+{q:"Newton's Third Law (\"for every action there is an equal and opposite reaction\") is used, together with Bernoulli's principle, to explain what in aerodynamics?",o:["Engine fuel consumption","The generation of wing lift","The strength of structural materials","How landing gear works"],a:1,e:"Since air leaving the wing's trailing edge is deflected downward, by Newton's third law the wing receives an equal and opposite upward reaction force: lift."},
+{q:"What does Boyle's Law state about a gas held at constant temperature?",o:["The volume of a gas is directly proportional to its temperature","The product of pressure and volume of a gas remains constant at constant temperature","The pressure of a gas never changes","Gases cannot be compressed"],a:1,e:"Boyle's Law describes that, at constant temperature, if a gas's volume decreases, pressure increases proportionally (and vice versa): the product P×V remains constant."},
+{q:"According to Pascal's Law, the fundamental formula relating force, pressure, and area in a hydraulic system is:",o:["Force = Pressure × Area","Force = Pressure / Area","Force = Area / Pressure","Force = Pressure + Area"],a:0,e:"Pascal's Law in a hydraulic system is expressed as Force = Pressure × Area, where pressure is in psi and area is in square inches."},
+{q:"The angle of attack of a wing is defined as the angle between:",o:["The horizon and the aircraft's longitudinal axis","The chord line and the relative wind","The two half-wings","The fuselage and the tail plane"],a:1,e:"Angle of attack is the angle formed between the wing's chord line (connecting the leading and trailing edges) and the direction of the relative wind."},
+{q:"What happens if the angle of attack becomes too great?",o:["Lift continues to increase indefinitely","The airflow can separate from the wing, causing a loss of lift (stall)","Drag completely disappears","The aircraft automatically accelerates"],a:1,e:"Beyond a certain critical angle of attack, the airflow separates from the wing surface and lift drops sharply: this is an aerodynamic stall."},
+{q:"What are wingtip vortices?",o:["Turbulence caused exclusively by the engines","Vortices generated by the higher-pressure air beneath the wing flowing up and around the wingtip","A phenomenon that only occurs during landing","Cold air currents generated by the fuel tanks"],a:1,e:"Wingtip vortices form because the higher-pressure air beneath the wing tends to flow up and around the wingtip toward the lower-pressure area above, creating a spiraling vortex (wake turbulence)."},
+{q:"Mach number is the ratio of:",o:["The speed of the aircraft to the speed of sound","Altitude to temperature","Engine thrust to the aircraft's weight","Static pressure to dynamic pressure"],a:0,e:"Mach number, named after Austrian scientist Ernst Mach, expresses the ratio of an aircraft's speed to the speed of sound under given conditions."},
+{q:"In a converging duct with subsonic airflow, according to Bernoulli's principle, what happens to velocity and pressure as the cross-sectional area decreases?",o:["Velocity increases and pressure decreases","Velocity decreases and pressure increases","Both velocity and pressure increase","Both velocity and pressure stay constant"],a:0,e:"In a converging duct with subsonic flow, as the area decreases, air velocity increases while static pressure decreases, consistent with Bernoulli's principle."},
+{q:"In a FIRST class lever, where is the fulcrum located relative to the effort and the resistance?",o:["At one end, with the effort at the other end","Between the effort and the resistance (e.g. a seesaw)","Always coincident with the resistance","There is no fulcrum in a first class lever"],a:1,e:"In a first class lever, the fulcrum is located between the effort and the resistance, as in the classic seesaw example."},
+{q:"In a SECOND class lever (e.g. a wheelbarrow), where is the resistance located?",o:["At one end, where the fulcrum is also located","Between the fulcrum (at one end) and the point where the effort is applied (at the other end)","Outside the lever itself","Always at the exact midpoint of the lever"],a:1,e:"In a second class lever, the fulcrum is at one end (e.g. the wheelbarrow's wheel), the effort is applied at the other end (the handles), and the resistance (the load) is located in between."},
+{q:"An airplane's retractable landing gear is cited as an example of which class of lever?",o:["First class","Second class","Third class","It is not considered a lever"],a:2,e:"In the retractable landing gear, the fulcrum is the attachment point to the aircraft, the resistance is the wheel/brake assembly, and the effort (the hydraulic actuator) is applied in between: it's a third class lever."},
+{q:"What does Charles' Law state about a gas at constant pressure?",o:["The volume of a gas is directly proportional to its absolute temperature","The pressure of a gas never depends on temperature","The volume of a gas decreases as temperature increases","There is no relationship between temperature and volume"],a:0,e:"Charles' Law states that, at constant pressure, the volume of a gas is directly proportional to its absolute temperature: if the temperature increases, the volume increases proportionally."},
+{q:"What is the fundamental difference between mass and weight of an object?",o:["They are exactly the same thing in every context","Mass is the quantity of matter, weight is the force of gravity acting on that mass","Weight is only measured in kilograms, mass only in pounds","Mass varies with altitude, weight does not"],a:1,e:"Mass is the quantity of matter in an object (constant), while weight is the force exerted by gravity on that mass, and can vary depending on the gravitational field."},
+{q:"What is potential energy?",o:["The energy possessed by a body by virtue of its position or state","Energy possessed only by moving bodies","Energy dissipated by friction","Electrical energy stored exclusively in a battery"],a:0,e:"Potential energy is stored energy that a body possesses by virtue of its position (e.g. height) or state, ready to be converted into kinetic energy."},
+{q:"In the classification of mechanical stresses on materials, torsion is defined as the stress that tends to:",o:["Stretch a material","Twist or rotate a material about its own axis","Compress a material","Cut a material into two parts"],a:1,e:"Torsion is the stress that tends to twist/rotate a material about its own longitudinal axis, as occurs for example in a crankshaft."},
+{q:"What distinguishes gauge pressure from absolute pressure?",o:["They are equivalent terms in every context","Gauge pressure is referenced to local atmospheric pressure, while absolute pressure is referenced to a total vacuum","Absolute pressure is only measured in bar","Gauge pressure always includes atmospheric pressure"],a:1,e:"Gauge pressure is measured starting from atmospheric pressure as the zero reference, while absolute pressure is measured starting from an absolute vacuum (zero absolute pressure)."},
+{q:"Dew point is defined as:",o:["The highest temperature reached during a day","The temperature at which water vapor in the air begins to condense","Atmospheric pressure at sea level","Wind speed under foggy conditions"],a:1,e:"Dew point is the temperature at which air, as it cools, reaches saturation and water vapor begins to condense into liquid form."},
+{q:"In heat transfer, convection occurs primarily through:",o:["Direct contact between two solids","The movement of a fluid (liquid or gas) that carries the heat","Electromagnetic waves through a vacuum","It is not a recognized method of heat transfer"],a:1,e:"Convection is heat transfer through the movement of a fluid (air or liquid) that, as it heats up, moves and carries thermal energy with it."},
+{q:"In general, how many main control axes does a fixed-wing aircraft have?",o:["Only one (longitudinal)","Two (longitudinal and lateral)","Three (longitudinal, lateral, vertical)","Five distinct axes"],a:2,e:"A fixed-wing aircraft has three main axes: longitudinal (roll), lateral/transverse (pitch), and vertical (yaw)."},
+{q:"What causes an aircraft's pitching motion about the lateral axis?",o:["The ailerons","The elevator, acting about the lateral axis","The rudder","The flaps"],a:1,e:"The elevator controls pitching motion about the aircraft's lateral/transverse axis."},
+{q:"The ailerons control the aircraft's motion about which axis?",o:["Vertical axis (yaw)","Lateral axis (pitch)","Longitudinal axis (roll)","No axis; they only control speed"],a:2,e:"The ailerons control the aircraft's roll about the longitudinal axis, which runs from nose to tail."},
+{q:"What is meant by an aircraft's static stability?",o:["The aircraft's initial tendency to return toward its own equilibrium condition after a disturbance","The aircraft's ability to stay parked on the ground","Stability during fuel servicing","Structural resistance to static loads"],a:0,e:"Static stability describes an aircraft's initial tendency, after being disturbed from equilibrium, to move in a direction that tends to restore that equilibrium."},
+{q:"What happens to atmospheric density as altitude increases?",o:["It progressively increases","It progressively decreases","It always stays constant","It increases up to 10,000 feet then decreases"],a:1,e:"As altitude increases, atmospheric density progressively decreases, as does atmospheric pressure: thinner air means fewer molecules per unit volume."},
+{q:"Bernoulli's principle relates which two quantities along a fluid flow?",o:["Temperature and humidity","Fluid velocity and static pressure","Electric current and resistance","Mass and gravitational acceleration"],a:1,e:"Bernoulli's principle describes the inverse relationship between the velocity of a moving fluid and its static pressure: where velocity increases, static pressure decreases."},
+],
+ch6: [
+{q:"What is the \"datum\" in the context of weight and balance?",o:["The heaviest point of the aircraft","An imaginary vertical plane from which all horizontal balance measurements are taken","The aircraft's actual center of gravity","The waterline for seaplanes"],a:1,e:"The datum is an imaginary vertical plane, perpendicular to the longitudinal axis, from which all horizontal distances (arms) are measured for balance purposes. Its location is set by the manufacturer."},
+{q:"What is the \"arm\" of a component in weight and balance calculations?",o:["The component's weight in pounds","The signed horizontal distance between the datum and the component's center of gravity","The component's physical length","The component's moment of inertia"],a:1,e:"The arm is the horizontal distance (positive if aft of the datum, negative if forward, by convention) between the datum and the CG of the component in question."},
+{q:"How is the \"moment\" of a component calculated in weight and balance?",o:["Weight divided by arm","Weight multiplied by arm","Weight squared","Arm minus weight"],a:1,e:"Moment is calculated by multiplying the component's weight by its arm: Moment = Weight × Arm."},
+{q:"What is the Center of Gravity (CG) of an aircraft?",o:["The geometric center point of the fuselage","The point at which all the aircraft's weight is concentrated, the balance point where nose-heavy and tail-heavy moments cancel out","The highest point of the aircraft","The location of the main fuel tank"],a:1,e:"The CG is the point at which all the weight of the aircraft is concentrated; it's the balance point where, if suspended, the aircraft would not rotate toward the nose or the tail."},
+{q:"What does an aircraft's Empty Weight include?",o:["Only the structure, with no engine or equipment","Airframe, powerplant, required fixed equipment, fixed ballast, hydraulic fluid, and residual fuel/oil","Only the maximum useful load","Maximum takeoff weight minus fuel"],a:1,e:"Empty weight includes the airframe, powerplant, installed fixed equipment, fixed ballast, hydraulic fluid, and residual fuel/oil in the systems."},
+{q:"How is an aircraft's Useful Load calculated?",o:["Maximum takeoff weight minus empty weight","Empty weight minus fuel","Maximum takeoff weight divided by 2","Empty weight plus crew"],a:0,e:"Useful load is obtained by subtracting the empty weight from the maximum allowable gross weight."},
+{q:"What is \"tare weight\" when weighing an aircraft?",o:["The weight of fuel remaining in the tanks","The weight of support equipment (e.g. jacks) used during weighing, to be subtracted from the reading","The aircraft's legal minimum weight","The weight of the permanent ballast"],a:1,e:"Tare weight is the weight of support equipment (such as jacks or chocks) used during weighing to correctly position the aircraft on the scales; it must be subtracted from the total reading to get the true weight."},
+{q:"What does EWCG (Empty Weight Center of Gravity) represent?",o:["The aircraft's balance point in the empty weight condition","The maximum weight allowed in flight conditions","The maximum useful load","The pilot's position during flight"],a:0,e:"The EWCG is the point at which the aircraft balances when it is in the empty weight condition."},
+{q:"If an aircraft's datum is located at the wing's leading edge, and a component is located exactly at that point, what is its arm?",o:["Always negative","Zero","Always positive","Not calculable"],a:1,e:"If a component is located exactly on the datum plane, its arm is zero, regardless of the sign convention used for the rest of the aircraft."},
+{q:"Temporary ballast, such as sandbags or lead bars, must be:",o:["Left free to move to dynamically balance the flight","Securely fastened so it cannot shift in flight, and clearly labeled","Removed before every flight for safety reasons","Positioned only in the cockpit"],a:1,e:"Temporary ballast must be securely fastened so it cannot shift during flight, and is typically marked with a label indicating the weight and the need for a new weight/balance check if removed."},
+{q:"Which instrument is used to check that an aircraft is level during weighing?",o:["A thermometer","A spirit level","A pressure gauge","A hygrometer"],a:1,e:"A spirit level is used to check that the aircraft is perfectly level before and during the weighing process."},
+{q:"What is meant by Mean Aerodynamic Chord (MAC) in relation to weight and balance?",o:["The total length of the fuselage","A reference wing chord used to express CG position as a percentage, typical on larger aircraft","The average weight of fuel on board","The average cruise speed"],a:1,e:"MAC is a reference wing chord relative to which, on many larger aircraft, the CG position is expressed as a percentage of MAC rather than in inches from the datum."},
+{q:"While weighing an aircraft, all jacks must be raised:",o:["One at a time, in random sequence","Simultaneously, with safety devices against loss of pressure","Only after all fuel has been removed","Only if the aircraft is already inside the hangar"],a:1,e:"Jacks must be raised simultaneously, with safety devices positioned against the jack cylinder to prevent tipping in case of pressure loss."},
+{q:"What does \"payload\" indicate compared to \"useful load\"?",o:["They are identical terms in every case","Payload is similar to useful load but does not include fuel","Payload always includes fuel, useful load does not","Payload refers only to baggage weight"],a:1,e:"Payload is similar to useful load but excludes the weight of fuel, typically including passengers, baggage, and crew."},
+{q:"Why is it important to know an aircraft's CG range?",o:["It's only needed for initial certification, not day-to-day operation","The CG must remain within the specified forward and aft limits to ensure adequate stability and controllability in flight","It only concerns maximum takeoff weight","It's only relevant for helicopters"],a:1,e:"The aircraft's CG must remain within the specified forward and aft limits (CG range) during all phases of flight to ensure adequate stability and controllability."},
+{q:"What typically happens when performing a forward \"adverse-loaded CG check\"?",o:["The most rearward CG position with minimum load is checked","It's verified that, when the aircraft is loaded in the configuration most unfavorable for shifting the CG forward, it still stays within the forward limit","Only the pilot's weight is checked","It only concerns residual fuel"],a:1,e:"A forward adverse-loaded CG check verifies that, in the loading configuration most unfavorable for shifting the CG forward (e.g. maximum front load, minimum rear load), the CG still remains within the allowable forward limit."},
+],
+ch7: [
+{q:"What does the \"hardness\" property of a metal indicate?",o:["The ability to be melted at low temperature","The ability to resist abrasion, penetration, and permanent distortion","The ability to conduct electricity","The material's specific gravity"],a:1,e:"Hardness is a material's ability to resist abrasion, penetration, cutting, or permanent distortion; it can be increased by cold-working or heat-treatment."},
+{q:"Elasticity of a metal refers to:",o:["The ability to be bent without breaking","The ability to return to its original size and shape once the applied force is removed","The ability to be cast in molds","Resistance to corrosion"],a:1,e:"Elasticity is the property that enables a metal to return to its original size and shape after the deforming force is removed."},
+{q:"Ductility of a metal indicates its ability to:",o:["Be drawn into thin wire without breaking","Resist corrosion","Conduct heat rapidly","Melt at low temperatures"],a:0,e:"Ductility is the property that allows a metal to be permanently deformed (e.g. drawn into wire) without breaking, typically under tensile stress."},
+{q:"What is meant by \"quenching\" in the heat treatment of steel?",o:["Slow heating up to room temperature","Rapid cooling of the metal, typically in water, oil, or brine, to harden it","Removing surface rust","Applying a protective paint coating"],a:1,e:"Quenching is the rapid cooling of a heated metal, typically in water, oil, or brine, to harden it. Brine is the fastest cooling medium of the three, oil the slowest."},
+{q:"What is the main purpose of annealing a metal?",o:["To maximize hardness","To relieve internal stresses, soften the metal, and make it more ductile","To make it impervious to corrosion","To increase electrical conductivity"],a:1,e:"Annealing relieves internal stresses, softens the metal, increases its ductility, and refines the grain structure by heating and cooling slowly."},
+{q:"To which metals does normalizing, as a heat treatment, apply?",o:["Only aluminum alloys","Only titanium","Only ferrous (iron-based) metals","All metals without distinction"],a:2,e:"Normalizing applies exclusively to iron-based (ferrous) metals, and is used to relieve internal stresses caused by heat treatment, welding, casting, or machining."},
+{q:"What is \"Alclad\" sheet?",o:["Gold-plated steel sheet","Sheet with an aluminum-alloy core coated with a layer of pure aluminum for corrosion protection","Untreated pure titanium sheet","Carbon-fiber composite sheet"],a:1,e:"Alclad is a material consisting of an aluminum-alloy core coated on each side with a thin layer (about 5.5%) of pure aluminum, which electrochemically protects the core from corrosion."},
+{q:"In solid shank rivets, how is the material identified?",o:["Head markings and/or color codes","Only by the rivet's weight","By the material's smell","There is no standard identification system"],a:0,e:"Solid shank rivets are identified by head markings/codes (raised or stamped) indicating the alloy used, sometimes combined with color codes."},
+{q:"Self-locking nuts differ from non-self-locking nuts because they:",o:["Always require a cotter pin for safety","Have a locking feature built into their construction, needing no auxiliary safetying","Are always lighter than standard nuts","Can only be used on titanium bolts"],a:1,e:"Self-locking nuts include a locking element built into their construction (e.g. a nylon insert or elastic deformation) and need no additional external safetying method such as a cotter pin."},
+{q:"A castle nut is typically secured with:",o:["Epoxy adhesive","A cotter pin inserted through the castellations and the hole in the bolt","A rubber gasket","It requires no safetying method"],a:1,e:"A castle nut has slots (castellations) that align with a hole in the bolt, through which a cotter pin is inserted to prevent it from loosening accidentally."},
+{q:"What does a higher hardness rating in a wrought aluminum alloy generally indicate?",o:["Greater mechanical strength, generally paired with lower ductility","Lower corrosion resistance in every case","No relationship to mechanical strength","Always a different alloy color"],a:0,e:"In general, a treatment that increases the hardness/strength of an aluminum alloy also reduces the material's ductility."},
+{q:"Why is the time between removal from the furnace and quenching critical for some aluminum alloys such as 2017 or 2024?",o:["It is not critical at all; it can be any duration","The elapsed time must not exceed 10 seconds, or the material's properties are compromised","It must always exceed 5 minutes for safety reasons","It only concerns the thickness of thin sheets"],a:1,e:"For 2017 and 2024 alloys, the interval between removal from the furnace and quenching must not exceed 10 seconds, since an excessive delay compromises the obtainable mechanical properties."},
+{q:"Natural-aging aluminum alloys, such as 2017 and 2024, reach their maximum strength:",o:["Immediately after quenching, with no further waiting","Naturally at room temperature, with about 90% of maximum strength reached within 24 hours","Only through artificial high-temperature heat treatment","They never reach maximum strength without welding"],a:1,e:"Natural-aging alloys, like 2017 and 2024, develop their strength at room temperature after quenching, reaching about 90% of maximum strength within 24 hours."},
+{q:"What is the fundamental difference between solid shank rivets and blind rivets?",o:["Blind rivets can be installed with access to only one side of the workpiece","Solid shank rivets are always lighter","Blind rivets are never used in aviation","There is no practical difference between the two types"],a:0,e:"Blind rivets allow installation with access to only one face of the workpiece, unlike solid shank rivets which require access from both sides for bucking."},
+{q:"Why is artificial \"aging\" (precipitation heat-treating) sometimes required for heat-treatable aluminum alloys?",o:["To reduce the weight of the component","To precipitate the soluble constituents out of the supersaturated solid solution and increase strength","To make it easier to weld","To change its surface color"],a:1,e:"Precipitation (aging) treatment causes soluble constituents to precipitate out of the supersaturated solid solution obtained by quenching, progressively increasing the material's strength up to a maximum."},
+{q:"Which quenching medium is generally considered the most \"drastic\" (cools fastest) among water, oil, and brine?",o:["Oil","Water","Brine","They are all equivalent"],a:2,e:"Brine (a salt solution) is the most drastic/rapid quenching medium, followed by water; oil is the least drastic, typically used for alloy steels."},
+{q:"What distinguishes the castellated shear nut (AN320) from a standard castle nut?",o:["It's designed to withstand only shear stress, not tension","It's designed for very high tensile loads","It never requires a cotter pin","It's made only of titanium"],a:0,e:"The AN320 castellated shear nut is specifically designed for use with devices subject only to shear stress, such as clevis bolts or threaded taper pins."},
+{q:"Which metal property describes its ability to be permanently deformed without breaking under a compressive load, as in hot rolling?",o:["Malleability","Brittleness","Elasticity","Fusibility"],a:0,e:"Malleability is the property that allows a metal to be permanently deformed (e.g. by hammering or rolling) without breaking, typically under compressive stress."},
+{q:"Brittleness of a material indicates:",o:["The tendency to break with little or no plastic deformation before fracture","The ability to stretch a great deal before breaking","Resistance to corrosion","Specific heat capacity"],a:0,e:"Brittleness is the tendency of a material to fracture with little or no prior plastic deformation, the opposite of ductility."},
+{q:"What do the designations AN, MS, and NAS often found on aircraft bolts and nuts indicate?",o:["Names of private manufacturers","Specification standards (Army-Navy, Military Standard, National Aerospace Standard) for standardized hardware components","Color codes for fire resistance","Only the country of manufacture"],a:1,e:"AN (Army-Navy), MS (Military Standard), and NAS (National Aerospace Standard) are systems of standardized specifications for aircraft bolts, nuts, and other fasteners."},
+{q:"Why is it important to respect the specified torque value when tightening aircraft bolts and nuts?",o:["It's only for aesthetic reasons","Insufficient or excessive tightening can compromise the structural integrity of the joint","It has no effect on flight safety","It only concerns non-structural components"],a:1,e:"Tightening that doesn't match the specified torque (too low or too high) can compromise the structural integrity of the joint, causing loosening in service or fastener damage."},
+{q:"What is the purpose of safety wiring bolts and nuts?",o:["To increase the joint's electrical conductivity","To prevent accidental loosening due to vibration","To completely replace the need for correct torque","To provide electrostatic grounding"],a:1,e:"Safety wiring with metal wire prevents accidental loosening of bolts, nuts, or other fasteners due to in-service vibration, keeping them in the correct position."},
+],
+ch8: [
+{q:"Which four conditions must exist for electrochemical corrosion to occur?",o:["Only heat and pressure","A susceptible metal (anode), a cathode, an electrolyte, and an electrical connecting path","Only sun exposure","Only the presence of sea salt"],a:1,e:"Electrochemical corrosion requires: a metal subject to corrosion (anode), a less reactive metal or material (cathode), an electrolyte (often water), and an electrical connecting path between anode and cathode."},
+{q:"Galvanic corrosion occurs when:",o:["Two identical metals are in contact with no moisture","Two dissimilar metals make electrical contact in the presence of an electrolyte","A metal is exposed only to UV rays","A metal is simply heated"],a:1,e:"Galvanic corrosion occurs when two dissimilar metals make electrical contact in the presence of an electrolyte; the greater the difference in activity between the two metals, the faster the corrosion."},
+{q:"Pitting corrosion is particularly common on which metals, and is among the most:",o:["Metals like gold; it's the least destructive","Metals like aluminum and magnesium (which form protective oxide films); it's among the most destructive and intense forms","Only composite materials; it's structurally irrelevant","Only copper; it's purely cosmetic"],a:1,e:"Pitting corrosion is common on metals such as aluminum and magnesium that form protective oxide films, and is classified as one of the most destructive and intense forms of corrosion."},
+{q:"Fretting corrosion occurs when:",o:["Two mating surfaces, normally at rest relative to each other, undergo slight repeated relative motion","A metal is fully immersed in salt water","The metal is exposed to extremely low temperatures","The metal is painted with no surface preparation"],a:0,e:"Fretting corrosion occurs when two mating surfaces, normally at rest with respect to one another, are subjected to slight relative motion, causing pitting and the generation of finely divided debris."},
+{q:"What characterizes intergranular corrosion?",o:["It attacks only the outer surface uniformly","It propagates along the metal's crystal grain boundaries, often with no visible surface signs","It affects only non-metallic materials","It is visible only to the naked eye without instruments"],a:1,e:"Intergranular corrosion propagates along the grain boundaries of the metal's crystal structure, often with no obvious surface signs, making it particularly insidious."},
+{q:"What is anodizing as a surface treatment for aluminum?",o:["An electrolytic process that increases the thickness and density of the natural protective oxide film","A simple spray-paint coating","A process that completely removes the surface oxide","A treatment used only on steel components"],a:0,e:"Anodizing is an electrolytic process in which the aluminum part acts as the positive pole in a bath with chromic acid or another oxidizing agent, increasing the thickness and density of the natural protective oxide film."},
+{q:"What distinguishes alodizing from anodizing?",o:["It's a simpler chemical process (non-electrolytic) that is rapidly replacing anodizing in many aviation applications","It's identical in every way to anodizing","It's only used on stainless steel","It requires much higher temperatures"],a:0,e:"Alodizing is a simpler chemical (non-electrolytic) treatment, applied by dipping or spraying, that is rapidly replacing anodizing thanks to its ease of application."},
+{q:"A common inhibitor for treating corroded aluminum surfaces is a 10% solution of:",o:["Chromic acid, activated with a small amount of sulfuric acid","Pure distilled water","Concentrated sodium chloride","Pure ammonia"],a:0,e:"A 10% by weight solution of chromic acid, activated with a small amount of sulfuric acid, is effective for treating exposed or corroded aluminum surfaces, helping to restore the protective oxide film."},
+{q:"What are the two main atmospheric corrosive agents?",o:["Ozone and nitrogen","Oxygen and atmospheric moisture","Carbon dioxide and hydrogen","Helium and argon"],a:1,e:"The main atmospheric corrosive agents are oxygen and moisture in the air; their direct action on metal is the most common cause of corrosion."},
+{q:"How can filiform corrosion be prevented?",o:["By increasing the relative humidity of the storage environment","By storing the aircraft in an environment with relative humidity below 70%","It can never be prevented","By removing all protective coatings"],a:1,e:"Filiform corrosion can be prevented by storing the aircraft in an environment with relative humidity below 70% and by using coating systems with a low rate of diffusion."},
+{q:"Which areas of an aircraft are considered particularly \"corrosion prone areas\"?",o:["Only the cockpit","Engine exhaust trail areas, landing gear wells, battery compartments, bilge areas, lavatories/galleys","Only the wingtips","Only freshly painted surfaces"],a:1,e:"Areas particularly prone to corrosion include engine exhaust trail areas, landing gear wells, battery compartments, bilge areas, lavatories/galleys, and areas where water can become trapped."},
+{q:"What characterizes exfoliation corrosion?",o:["The metal separates in layers parallel to the surface due to grain-boundary corrosion","It is a phenomenon that only occurs underwater","It only shows up on painted non-ferrous metals","It is never found in aviation"],a:0,e:"Exfoliation corrosion is an advanced form of intergranular corrosion in which the expanding corrosion products cause layers of metal parallel to the surface to separate."},
+{q:"For cleaning thin aluminum sheet, especially Alclad, which abrasive cleaning method is generally NOT recommended?",o:["Light, controlled glass bead blasting","Steel grit blasting","Cleaning with a soft cloth","Cleaning with a neutral detergent"],a:1,e:"Steel grit should not be used on aluminum or corrosion-resistant metals, since it can contaminate the surface and cause galvanic corrosion; glass bead blasting is generally more suitable."},
+],
+ch9: [
+{q:"For what maximum outside diameter of soft aluminum alloy tubing is a double flare typically used?",o:["3/8\" and under","2 inches and over","Only for steel tubing","There is no size limit"],a:0,e:"A double flare is used on soft aluminum alloy tubing with an outside diameter of 3/8\" or under, to prevent the flare from being cut off and the resulting joint failure."},
+{q:"Why is a double flare generally preferred over a single flare on small diameters?",o:["It's faster to make","It's more concentric, seals better, and is more resistant to the shearing effect of torque","It requires fewer tools","It doesn't require deburring"],a:1,e:"A double flare is more concentric than a single flare, providing a better seal and greater resistance to the shearing effect caused by fitting torque."},
+{q:"MS flareless fittings are primarily designed for which application?",o:["Low-pressure fuel systems","High-pressure (3,000 psi) hydraulic systems subject to severe vibration","Only very low-pressure pneumatic systems","Exclusively for oxygen"],a:1,e:"MS flareless fittings are designed primarily for high-pressure (about 3,000 psi) hydraulic systems that may be subject to severe vibration or fluctuating pressure."},
+{q:"Before installing a new flareless tube assembly, what preliminary operation is required?",o:["Painting the tube","Presetting the fitting onto the tube","Welding the tube to the fitting","No preliminary operation is required"],a:1,e:"Although flareless fittings eliminate the need to flare the tube, a presetting operation is required before installing the new assembly."},
+{q:"The synthetic material Buna-N, used in the construction of flexible hose, is particularly noted for:",o:["Excellent resistance to petroleum products","Exclusive use with phosphate ester base hydraulic fluid (Skydrol)","Very high temperature applications above 500°F","Only for pneumatic tubing"],a:0,e:"Buna-N is a synthetic compound with excellent resistance to petroleum products, but should not be confused with other materials; it is not suitable for Skydrol (phosphate ester base) fluids."},
+{q:"Which synthetic hose material is recommended for use with phosphate ester base hydraulic fluid (Skydrol™)?",o:["Buna-N","Neoprene","Butyl","Standard PVC"],a:2,e:"Butyl, a synthetic compound derived from petroleum raw materials, is an excellent material for use with phosphate ester base hydraulic fluid (Skydrol), unlike Buna-N and Neoprene."},
+{q:"Compared to Buna-N, Neoprene has:",o:["Better resistance to petroleum products but worse abrasion resistance","Lower resistance to petroleum products but better abrasion resistance","Identical characteristics in every respect","It is never used in the construction of aircraft flexible hose"],a:1,e:"Neoprene has lower resistance to petroleum products than Buna-N, but offers better abrasion resistance; it also should not be used with Skydrol."},
+{q:"How are fluid lines on board an aircraft typically identified?",o:["They are never visually identified","With markers using color codes, words, and geometric symbols indicating function, content, and main hazard","Only by an engraved serial number","By the color of the aircraft's exterior paint"],a:1,e:"Fluid lines are identified with markers using color codes, words, and geometric symbols, indicating the line's function, its content, and the main hazard associated with it."},
+{q:"In standard tapered pipe thread fittings, how is a seal formed when two fittings are joined?",o:["Through a separate rubber gasket that is always required","Through the taper of the thread itself (male into female)","Through cold welding","Through a visible external O-ring"],a:1,e:"In tapered pipe thread fittings, the taper of the thread itself, when the male is screwed into the female, forms the seal; an approved thread lubricant is still used to prevent seizing and leakage."},
+{q:"What are AN flared fittings primarily composed of?",o:["Just a nut","A sleeve and a nut","A rubber gasket and a screw","A simple threaded plug"],a:1,e:"An AN flared fitting consists of a sleeve and a nut; the nut, as it tightens, draws the sleeve and the tube's flare tightly against the male cone-shaped fitting, forming the seal."},
+{q:"To repair small dents on rigid tubing, which tool is mentioned for removing them?",o:["A body hammer","A \"bullet\" pulled through the tube by a cable","A soldering iron","A hand-held milling cutter"],a:1,e:"Small dents can be removed by pulling a \"bullet\" (a shaped ball/plug) through the tube on a cable, restoring the section to its original shape."},
+],
+ch10: [
+{q:"What is a borescope, and what is it mainly used for?",o:["An instrument for measuring metal hardness","A device that allows visual inspection of internal areas without disassembling the component","A type of drill for deep holes","An electrical measuring instrument"],a:1,e:"A borescope is essentially a visual inspection tool that lets you see inside areas that couldn't otherwise be inspected without disassembly, reducing the need for costly teardowns."},
+{q:"What are the two basic borescope configurations mentioned in the handbook?",o:["Digital and analog","Rigid (with a small mirror) and flexible fiber optic","Electric and pneumatic","Manual and automatic"],a:1,e:"Borescopes are mainly divided into the rigid type (a small telescope with a mirror at the end) and the fiber optic type, which offers greater flexibility."},
+{q:"Dye penetrant inspection relies on what principle?",o:["The penetrant must enter the defect to form a visible indication after the developer is applied","The penetrant dissolves the metal surrounding the defect","The penetrant only works on ferromagnetic materials","The penetrant measures the part's electrical conductivity"],a:0,e:"In penetrant inspection, the penetrant must seep into the defect; after removing the excess and applying the developer, the defect becomes visible by contrast."},
+{q:"Eddy current inspection is based on which physical phenomenon?",o:["The reflection of high-frequency sound waves","The interaction between an induced electromagnetic field and circulatory currents (eddy currents) generated in the metal","Measuring surface temperature","The reflection of visible light"],a:1,e:"Eddy current inspection is based on the interaction between the electromagnetic field applied via a coil and the eddy currents induced in the conductive material under test."},
+{q:"Magnetic particle inspection is applicable to which types of material?",o:["Only non-metallic materials such as plastic","Only ferromagnetic materials such as iron and steel","All materials without exception","Only carbon fiber composite materials"],a:1,e:"Magnetic particle inspection detects invisible cracks and defects in ferromagnetic materials (iron, steel); it is not applicable to non-magnetic materials such as aluminum."},
+{q:"In the ultrasonic \"pulse echo\" method, how are defects detected?",o:["By measuring the amplitude of reflected signals and the time it takes them to travel between surfaces and the discontinuity","By only measuring the temperature of the part","By observing the material's color under UV light","By weighing the component before and after inspection"],a:0,e:"In the pulse echo method, defects are detected by measuring the amplitude of reflected signals and the time required for them to travel between specific surfaces and the discontinuity (defect)."},
+{q:"In ultrasonic inspection, what is the \"couplant\" used for?",o:["To electrically amplify the signal","To couple the transducer to the part being tested, since ultrasonic energy does not travel through air","To clean the surface after inspection","To temporarily magnetize the part"],a:1,e:"The couplant (water, glycerin, oils, grease) is needed to acoustically couple the transducer to the part, since ultrasonic energy does not travel effectively through air."},
+{q:"Why is radiographic (X-ray) inspection considered advantageous compared to other NDI methods?",o:["It always requires complete disassembly of the component","It allows internal defects to be located with little or no disassembly of the structure","It's the only method applicable to composite materials","It poses no risk at all to the operator"],a:1,e:"Radiographic inspection allows defects to be located in structures and engines with little or no disassembly, unlike many other NDI methods that require removal and stripping of the suspect part; however, it does involve radiation risks that must be carefully managed."},
+{q:"Under 14 CFR Part 91, how frequently must a complete annual inspection of an aircraft take place (with some exceptions)?",o:["Every 6 months","Annually","Every 2 years","Only upon the owner's request"],a:1,e:"With some exceptions, all aircraft must have a complete inspection annually, as required by 14 CFR part 91."},
+{q:"What is the main purpose of a progressive inspection program?",o:["To increase the aircraft's downtime","To break the scope of the annual inspection into multiple stages to minimize downtime","To completely replace the mandatory annual inspection","To eliminate the need for inspections on commercial aircraft"],a:1,e:"A progressive inspection program breaks the scope and detail of the annual inspection into successive stages, allowing the aircraft's downtime to be minimized."},
+{q:"How often, in calendar months, must the altimeter and static system be tested per 14 CFR Part 43 Appendix E, for aircraft operated under IFR in controlled airspace?",o:["12 months","24 months","36 months","Never required if the aircraft only flies VFR"],a:1,e:"Aircraft operated under IFR rules in controlled airspace must have the altimeter and static system tested within the preceding 24 calendar months, per 14 CFR part 43, Appendix E."},
+{q:"Continuous inspection programs typically apply to which types of aircraft?",o:["Only ultralights","Large or turbine-powered aircraft, due to their greater complexity","Only experimental aircraft","Only single-engine light helicopters"],a:1,e:"Continuous inspection programs are similar to progressive ones but apply to large or turbine-powered aircraft, being more complex and requiring FAA approval."},
+],
+ch11: [
+{q:"What is a torque wrench mainly used for?",o:["Measuring the length of a bolt","Measuring and applying a precise turning force (torque) when tightening nuts and bolts","Measuring the component's temperature","Cutting bolts that are too long"],a:1,e:"A torque wrench is a precision tool that measures the amount of turning force (torque) applied during tightening, ensuring the specified value is met."},
+{q:"What is a \"flare nut\" wrench, and what is it used for?",o:["A standard socket wrench with no opening","A wrench similar to a box-end wrench but cut open on one side, used on the B-nuts of fuel/hydraulic/oxygen lines","A wrench used only on electrical components","A digital torque wrench"],a:1,e:"The flare nut wrench looks like a box-end wrench that's been cut open on one side, allowing it to be slipped onto a tube line to work on the B-nut without having to remove it from the end."},
+{q:"A twist drill is characterized by:",o:["A cylindrical hardened steel body with spiral flutes and a conical point with cutting edges","A completely flat shape with no flutes","A body made exclusively of reinforced plastic","The complete absence of cutting edges"],a:0,e:"A twist drill is a cylindrical hardened steel tool with spiral flutes running along the body and a conical point whose cutting edges are formed by the ends of the flutes."},
+{q:"When reading a micrometer, the lines on the barrel numbered 1, 2, 3, 4 typically indicate measurements of:",o:["Whole millimeters","Tenths of an inch (0.100\", 0.200\", 0.300\"...)","Hundredths of a millimeter","Angular degrees"],a:1,e:"On a standard micrometer barrel, the lines numbered 1, 2, 3, 4 indicate increments of one tenth of an inch: 0.100\", 0.200\", 0.300\", and so on."},
+{q:"What does a vernier scale on a micrometer allow you to do?",o:["Directly measure the part's temperature","Directly read fractions even smaller than a division already shown on the thimble scale","Automatically convert inches to millimeters","Lock the micrometer in place"],a:1,e:"A vernier scale allows you to directly read fractions even finer than a division of the thimble scale, increasing the reading precision of the micrometer."},
+{q:"Double-cut files are used mainly for:",o:["Only for sharpening saws","Finishing flat surfaces and similar work","Only for machining plastic materials","Only for electrical components"],a:1,e:"Hand files, double cut, with one smooth safe edge, are used mainly for finishing flat surfaces and similar work."},
+{q:"During lathe filing, how should the file be held relative to the rotating workpiece?",o:["Rigid and motionless against the workpiece","In constant motion with a slight lateral sliding motion, not held rigidly","Always perpendicular to the lathe axis with no movement","A file is never used on a lathe"],a:1,e:"In lathe filing, the file should be kept in constant motion with a slight lateral gliding motion along the workpiece, not held rigid and stationary, to ensure a uniform finish."},
+{q:"Why is one edge of a hand file left smooth (safe edge)?",o:["Purely for aesthetic reasons","To allow filing into corners without cutting into the adjacent surface","To increase the file's weight","It serves no practical function"],a:1,e:"The safe edge allows you to work near corners or adjacent surfaces without risk of accidentally cutting into them with the file's teeth."},
+],
+ch12: [
+{q:"What is the formula for Ohm's Law relating voltage (V), current (I), and resistance (R)?",o:["V = I / R","V = I × R","V = I + R","V = I - R"],a:1,e:"Ohm's Law states that voltage (V) equals current (I) multiplied by resistance (R): V = I × R."},
+{q:"In a purely SERIES circuit, how does the current behave at every point in the circuit?",o:["It's always different at each component","It's the same at every point in the circuit","It goes to zero across each resistor","It only depends on the applied voltage, not on the circuit"],a:1,e:"In a series circuit, since there is only one path for the current, it has the same value at every point in the circuit."},
+{q:"In a purely PARALLEL circuit, what stays constant across each branch?",o:["The current","The voltage","The total resistance","The power dissipated"],a:1,e:"In a parallel circuit, the voltage is the same across each branch, while the current divides among the various branches according to their resistance."},
+{q:"Kirchhoff's Voltage Law states that, in a closed circuit:",o:["The algebraic sum of all voltages is always zero","The total current is always zero","The total resistance is always zero","The total power is always infinite"],a:0,e:"Kirchhoff's Voltage Law states that, going around a closed loop, the algebraic sum of all voltage drops and electromotive forces is always zero."},
+{q:"A lead-acid battery is an example of a:",o:["Primary cell, not rechargeable","Secondary cell, rechargeable (the chemical reaction is reversible)","Non-electrochemical cell","Cell usable only for very low-voltage applications"],a:1,e:"The lead-acid battery is a secondary cell: the electrochemical reaction that releases energy is reversible, allowing it to be recharged."},
+{q:"How is the state of charge of a lead-acid battery measured?",o:["By measuring the battery's external temperature","By measuring the electrolyte's density with a hydrometer","By weighing the entire battery","By measuring only the electrolyte's color"],a:1,e:"The state of charge of a lead-acid battery is checked by measuring the density (specific gravity) of the electrolyte using a hydrometer."},
+{q:"In nickel-cadmium (Ni-Cad) batteries, what substance makes up the electrolyte?",o:["Diluted sulfuric acid","A solution of potassium hydroxide (KOH)","Pure distilled water","Sodium chloride"],a:1,e:"The electrolyte of Ni-Cad batteries is a solution of potassium hydroxide (KOH) at a concentration of 20 to 34 percent by weight, dissolved in distilled water."},
+{q:"What happens under overcharging conditions in a Ni-Cad battery?",o:["No particular risk occurs","Explosive mixtures of hydrogen and oxygen can develop","The battery spontaneously cools down","The electrolyte automatically becomes inert"],a:1,e:"During overcharging of Ni-Cad cells, potentially explosive mixtures of hydrogen and oxygen can develop, which is why charge control is critical."},
+{q:"A capacitor in a direct current (DC) circuit, once fully charged, does what to the current?",o:["Allows continuous current flow","Blocks the flow of direct current (acts like an open circuit)","Amplifies the current exponentially","Converts direct current into alternating current"],a:1,e:"Once fully charged, a capacitor in DC blocks current flow, behaving like an open circuit; it does, however, allow alternating current (AC) to pass, with an opposition called capacitive reactance."},
+{q:"What does inductive reactance represent in an AC circuit?",o:["The opposition to alternating current flow offered by an inductor, which increases with frequency","The pure resistance of a conductor","The opposition offered only by capacitors","A quantity independent of frequency"],a:0,e:"Inductive reactance is the opposition to alternating current flow offered by an inductor, and is directly proportional to the signal's frequency and to the inductance."},
+{q:"A forward biased semiconductor diode allows current to flow. What happens if it is reverse biased?",o:["It allows current to flow in the same way","It (ideally) blocks current flow","It increases the output voltage","It behaves like an ideal capacitor"],a:1,e:"A reverse biased diode (ideally) blocks the flow of current, allowing current to flow in only one direction when forward biased."},
+{q:"A Zener diode is typically used in a circuit to:",o:["Amplify an audio signal","Provide a stable reference voltage or regulate/limit voltage","Convert light into electricity","Store energy like a capacitor"],a:1,e:"A Zener diode, when reverse biased beyond its breakdown (Zener) voltage, maintains a constant voltage across it, which is why it's used as a voltage regulator/reference."},
+{q:"In a bipolar junction transistor (BJT), what are the three main terminals?",o:["Anode, Cathode, Gate","Emitter, Base, Collector","Source, Drain, Gate","Positive, Negative, Neutral"],a:1,e:"A bipolar junction transistor has three terminals: Emitter, Base, and Collector."},
+{q:"What is a transformer used for in an alternating current circuit?",o:["Converting DC to AC","Stepping voltage/current up or down through magnetic coupling between windings","Permanently storing electrical energy","Rectifying alternating current"],a:1,e:"A transformer uses magnetic coupling between the primary and secondary windings to step up or down the voltage level (and consequently the current) of an AC signal, with no direct electrical contact."},
+{q:"What does a full-wave rectifier do?",o:["Converts direct current into alternating current","Converts both halves of the AC waveform into unidirectional pulsating current (pulsating DC)","Amplifies only the negative half-cycle","Completely blocks all current"],a:1,e:"A full-wave rectifier converts both halves (positive and negative) of the AC waveform into a single direction, producing pulsating direct current more efficiently than a half-wave rectifier."},
+{q:"What does an ohmmeter measure?",o:["The voltage between two points in a circuit","The electrical resistance of a component or circuit","The frequency of an AC signal","The power dissipated in a resistor"],a:1,e:"An ohmmeter measures the electrical resistance of a component or circuit; the item being measured must not be energized during the measurement."},
+{q:"In a DC generator, what is the function of the commutator?",o:["Increasing the generated voltage","Converting the internally generated alternating current into direct current output","Reducing mechanical friction","Electrically insulating the armature from the frame"],a:1,e:"The commutator is a segmented mechanical device that reverses the connections of the rotating armature, converting the internally generated alternating current into pulsating direct current output."},
+{q:"What type of current does an alternator natively produce, before any rectification?",o:["Pure direct current","Alternating current (AC)","Static electricity","No current, only voltage"],a:1,e:"An alternator natively generates alternating current (AC); in aircraft electrical systems it is then rectified (via diodes) to supply direct current to the electrical system."},
+{q:"What happens to total resistance when more resistors are added in parallel to a circuit?",o:["Total resistance always increases","Total resistance always decreases below the value of the smallest single branch","Total resistance always stays the same","It cannot be calculated mathematically"],a:1,e:"Adding resistors in parallel always decreases the circuit's total resistance, resulting in a value lower than the smallest individual resistor in the group."},
+{q:"What is meant by \"true power\" in an AC circuit, measured in Watts?",o:["The total apparent power, without considering phase shift","The power actually dissipated as useful work (heat), accounting for the phase shift between voltage and current","Purely reactive power, measured in VAR","Power measured only in DC circuits"],a:1,e:"True power, measured in Watts, represents the power actually dissipated as useful work in an AC circuit, accounting for the phase shift between voltage and current (unlike apparent power)."},
+{q:"Compared to a ceramic capacitor, an electrolytic capacitor is generally characterized by:",o:["Much lower capacitance but polarity doesn't matter","Much higher capacitance, but with polarity that must be respected during installation","No polarity at all and very low capacitance","It cannot be used in DC circuits"],a:1,e:"Electrolytic capacitors generally offer much higher capacitance than ceramic ones, but they are polarized: installation polarity must be respected, or the component can be damaged."},
+{q:"A MOSFET field-effect transistor differs from a BJT mainly because it:",o:["Is controlled by current rather than voltage","Is controlled mainly by the voltage applied to the gate, with negligible control current","Can never be used as an electronic switch","Only works with pure direct current"],a:1,e:"Unlike the BJT (controlled by base current), the MOSFET is controlled primarily by the voltage applied to the gate terminal, with negligible gate control current."},
+{q:"What does the term \"free electrons\" mean in a good electrical conductor?",o:["Electrons strongly bound to the nucleus, unable to move","Weakly bound outer-shell (valence) electrons, able to move easily between atoms","Only electrons found in insulating materials","A concept not applicable to conductor physics"],a:1,e:"Conductive materials have valence electrons weakly bound to the nucleus (free electrons), which can move easily between atoms under the influence of an electric field, allowing current to flow."},
+{q:"In a series-parallel circuit, how is total resistance generally calculated?",o:["By simply adding all resistances as in a purely series circuit","By progressively reducing the parallel sections to equivalent resistances, then adding them in series with the rest","It can never be calculated in mixed circuits","By dividing the number of resistors by the applied voltage"],a:1,e:"In a series-parallel circuit, the parallel sections are first reduced to a single equivalent resistance, then these equivalent resistances are added together with the series resistances to obtain the total resistance."},
+{q:"What does the term \"static electricity\" indicate compared to ordinary electric current?",o:["An accumulated, generally stationary electric charge, not a continuous flow of electrons like current","It is always identical to alternating current","It only concerns metallic materials","There is no distinction between the two concepts"],a:0,e:"Static electricity is an accumulated electric charge on a surface, generally stationary, distinct from the continuous flow of electrons that characterizes ordinary electric current."},
+{q:"Why is electrostatic discharge (ESD) an important concern in avionics maintenance?",o:["It has no effect on modern electronic components","It can damage sensitive electronic components such as integrated circuits and semiconductors","It only concerns the technician's personal safety, never the components","It's only relevant for turbine engines"],a:1,e:"Electrostatic discharges (ESD) can irreparably damage sensitive electronic components such as integrated circuits and semiconductors, which is why specific precautions (antistatic wrist straps, dissipative surfaces) are used during avionics maintenance."},
+],
+ch13: [
+{q:"What is the fundamental difference between a \"mechanic\" certificate and a \"repairman\" certificate?",o:["They are exactly the same certificate with different names","The mechanic certificate is transportable, the repairman certificate is tied to a specific location/company","The repairman can work anywhere in the world, the mechanic cannot","The mechanic certificate only concerns helicopters"],a:1,e:"The mechanic certificate is transportable and not dependent on the technician's location, while the repairman certificate is specific to employment at a particular company location, and must be returned if that employment ends."},
+{q:"What is the minimum age required to obtain a mechanic certificate under 14 CFR Part 65?",o:["16 years old","18 years old","21 years old","25 years old"],a:1,e:"One of the eligibility requirements for a mechanic certificate is being at least 18 years of age."},
+{q:"What is the minimum passing score for the written tests required for the mechanic certificate?",o:["50%","60%","70%","90%"],a:2,e:"The minimum passing score for the written tests (General, Airframe, Powerplant) required for the mechanic certificate is 70%."},
+{q:"What are the three parts of the written test to obtain the A&P (Airframe & Powerplant) certificate?",o:["Only Airframe and Powerplant","General, Airframe, and Powerplant","Safety, Regulations, and Maintenance","Theory, Practice, and Ethics"],a:1,e:"The A&P certificate candidate must pass three separate written tests: General (60 questions), Airframe (100 questions), and Powerplant (100 questions)."},
+{q:"How many months of documented practical experience are required to apply for only ONE of the two ratings (airframe OR powerplant), without attending an AMTS school?",o:["6 months","12 months","18 months","30 months"],a:2,e:"Without an AMTS certificate (14 CFR part 147), documented evidence of at least 18 months of practical experience is required for a single rating (airframe or powerplant); 30 months if applying for both."},
+{q:"If an A&P technician doesn't actively work as a mechanic for a period of time, can the certificate still be exercised?",o:["The certificate never expires regardless of work activity, but requires at least 6 months of work activity in the last 24 months to be exercised","The certificate automatically expires after 12 months of inactivity","It must be renewed every year regardless of activity","There is no recent experience requirement"],a:0,e:"The A&P certificate remains valid until it is surrendered, suspended, or revoked, but it cannot be exercised if the holder has not actively worked as a mechanic for at least 6 of the preceding 24 months (recent experience requirement)."},
+{q:"A mechanic with only an Airframe rating (no Powerplant) can perform a major repair, but who must sign the final Return to Service (RTS)?",o:["Anyone with a mechanic certificate, even without an IA","A certificated A&P technician holding an Inspection Authorization (IA)","Only an FAA inspector in person","An RTS is never required for major repairs"],a:1,e:"Although a mechanic with an Airframe rating can perform the work required for a major repair or alteration, the final Return to Service must be signed by a certificated A&P technician holding an Inspection Authorization (IA)."},
+{q:"For how many years must an A&P mechanic have held their certificate before being able to apply for Inspection Authorization (IA)?",o:["At least 1 year","At least 3 years, with activity in the last 2 years","At least 10 years","There is no minimum time requirement"],a:1,e:"To apply for IA, an A&P mechanic must have held their certificate for at least 3 years and have been active for the last 2 years."},
+{q:"When does the Inspection Authorization (IA) certificate expire?",o:["It never expires","March 31 of every odd-numbered year","December 31 of every year","Exactly every 5 years from the date of issue"],a:1,e:"The IA certificate expires on March 31 of every odd-numbered year, and can only be exercised as long as the technician holds a currently valid mechanic certificate."},
+{q:"If a candidate fails the mechanic written test, after how long can they retake it (without additional training)?",o:["Immediately, the following day","After a waiting period of 30 days","After 6 months","They can never retake the test"],a:1,e:"If the test is failed, the candidate must wait a period of 30 days before retaking the test, or receive additional training with a signed statement from the instructing technician."},
+{q:"What happens to a mechanic certificate in the case of revocation?",o:["The technician can immediately apply for a new certificate","The technician may not apply for a new certificate for a period of 1 year after the revocation","Revocation is always temporary and automatically lifted after 30 days","It has no effect on the ability to apply for new certificates"],a:1,e:"In the case of certificate revocation, the technician may not apply for a new certificate for a period of at least 1 year from the date of revocation."},
+{q:"What consequences can refusing to submit to a drug test required under 14 CFR part 120 have for a technician?",o:["No consequences at all, the test is always optional","Denial of applications for new certifications and possible suspension/revocation of existing certificates","Only a verbal warning with no practical consequences","An administrative fine with no effect on the certificate"],a:1,e:"Refusing to submit to a required drug test can result in denial of applications for additional certifications, as well as suspension or revocation of any certificate or rating currently held."},
+],
+ch14: [
+{q:"The so-called \"Dirty Dozen\" lists 12 human factors in aviation maintenance. Which of the following is a correct list of SOME of these factors?",o:["Lack of communication, complacency, lack of knowledge, distraction","Speed, altitude, temperature, pressure","Weight, balance, fuel, range","Color, shape, size, weight"],a:0,e:"The Dirty Dozen comprises 12 factors: lack of communication, complacency, lack of knowledge, distraction, lack of teamwork, fatigue, lack of resources, pressure, lack of assertiveness, stress, lack of awareness, and norms."},
+{q:"What is meant by \"complacency\" as a human risk factor?",o:["Excessive fear when performing a new task","A false sense of security developed over time that leads to skipping or overlooking checks, especially on repetitive tasks","A complete lack of experience","A type of acute physical fatigue"],a:1,e:"Complacency develops over time when a technician, having performed a task repeatedly without ever finding a fault, develops a false sense of confidence that can lead them to skip or overlook important checks."},
+{q:"What is the PEAR model used to organize human factors concepts in aviation maintenance?",o:["An acronym standing for People, Environment, Actions, Resources","A type of quality control tool","A specific FAA regulation","A type of written test for the A&P rating"],a:0,e:"PEAR is a mnemonic used to organize human factors concepts: People, Environment, Actions, and Resources."},
+{q:"What is meant by \"circadian rhythm\" in relation to fatigue?",o:["A natural daily cycle of physiological variations (body temperature, blood pressure, alertness) that affects performance","A specific physical training regimen for night-shift technicians","A regulation on maximum working hours","An electronic device for measuring tiredness"],a:0,e:"Circadian rhythm is the natural daily cycle through which body temperature, blood pressure, heart rate, alertness, and other physiological variables rise and fall, influencing work performance throughout the day."},
+{q:"What is meant by \"norms\" as a risk factor in the Dirty Dozen?",o:["Official written FAA regulations","Unwritten rules, informally developed within a work group, that can deviate from established safety standards","Approved maintenance manuals","Mandatory written tests"],a:1,e:"Norms are unwritten rules, followed or tolerated by most organizations, informally developed to deal with ambiguous situations; if negative, they can drift away from established safety standards and contribute to accidents."},
+{q:"Why is lack of communication particularly critical during shift changes in aircraft maintenance?",o:["It has no practical impact on safety","It's essential to explain what has and hasn't been completed, to prevent work from being forgotten or mistakenly duplicated","It only concerns communication with external customers","It's only relevant for pilots, not technicians"],a:1,e:"During shift changes, technicians must clearly communicate what work has been completed and what remains to be done, since poor communication can lead to incomplete or duplicated work, with serious safety consequences."},
+{q:"Lack of assertiveness as a risk factor refers to:",o:["The inability to alert others when something doesn't seem right, letting the problem continue","Excessive aggressiveness toward coworkers","A lack of physical strength to do the job","A type of chronic tiredness"],a:0,e:"Lack of assertiveness concerns a technician's inability or reluctance to alert others when something doesn't seem right, allowing a potentially dangerous problem to persist."},
+{q:"What can cause a \"distraction\" while performing maintenance on an aircraft?",o:["Only external physical events such as loud noises","Both external physical events (e.g. a phone call) and the technician's own internal thoughts, independent of the work environment","Exclusively the presence of other technicians in the work area","Distractions never have a real impact on safety"],a:1,e:"Distractions can be both physical (e.g. a phone call, an aircraft being pushed into the hangar) and mental/psychological, internal to the technician, independent of the surrounding work environment."},
+{q:"Why does fatigue represent a significant risk factor in maintenance errors?",o:["It has never been linked to real accidents","It has been identified as a major contributor to many maintenance errors that have led to accidents","It only concerns pilots, never maintenance technicians","It only occurs after work shifts longer than 24 consecutive hours"],a:1,e:"Fatigue is identified as an important human factor that has contributed to numerous maintenance errors, some of which have led to serious accidents."},
+{q:"What is meant by \"lack of resources\" as a Dirty Dozen factor, and what should a technician's correct response be?",o:["Continue the work anyway without adequate resources in order to meet deadlines","Stop the maintenance work until the proper parts or tools are available","Ignore the problem, since it's never relevant to safety","Always ask the customer to source the missing materials"],a:1,e:"When adequate resources (parts, tools, documentation) are lacking to properly perform a job, the correct decision is to stop the maintenance work until the necessary resources are available, rather than improvising."},
+]
+};
+
+const chapterMeta = [
+  {id:'ch1', num:1, title:'Sicurezza, Operazioni a Terra e Rifornimento'},
+  {id:'ch2', num:2, title:'Normative, Moduli, Registri e Pubblicazioni'},
+  {id:'ch3', num:3, title:'Matematica per la Manutenzione'},
+  {id:'ch4', num:4, title:'Disegni Tecnici Aeronautici'},
+  {id:'ch5', num:5, title:'Fisica per l\'Aviazione'},
+  {id:'ch6', num:6, title:'Peso e Bilanciamento'},
+  {id:'ch7', num:7, title:'Materiali, Hardware e Processi'},
+  {id:'ch8', num:8, title:'Pulizia e Controllo Corrosione'},
+  {id:'ch9', num:9, title:'Linee e Raccordi Fluidi'},
+  {id:'ch10', num:10, title:'Concetti e Tecniche di Ispezione'},
+  {id:'ch11', num:11, title:'Utensili Manuali e di Misura'},
+  {id:'ch12', num:12, title:'Elettricità ed Elettronica'},
+  {id:'ch13', num:13, title:'Privilegi e Limitazioni del Meccanico'},
+  {id:'ch14', num:14, title:'Fattori Umani'}
+];
+
+/* ====================== STATO APP ====================== */
+let currentChapter = null;
+let currentQuestions = [];
+let currentIndex = 0;
+let selectedOption = null;
+let answered = false;
+let userAnswers = []; // {qIndex, chosen, correct}
+
+const PASS_MARGIN = 0.90;
+const STORAGE_KEY = 'amtg_quiz_scores';
+
+function loadScores(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveScore(chapterId, pct){
+  const scores = loadScores();
+  if(!scores[chapterId] || pct > scores[chapterId]){
+    scores[chapterId] = pct;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+  }
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ====================== SCHERMATA HOME ====================== */
+function renderHome(){
+  const scores = loadScores();
+  const listEl = document.getElementById('chapterList');
+  listEl.innerHTML = '';
+  let total = 0;
+  chapterMeta.forEach(ch=>{
+    const qs = quizData[ch.id] || [];
+    total += qs.length;
+    const best = scores[ch.id];
+    let scoreHtml = '<span class="score-none">Non ancora fatto</span>';
+    if(best !== undefined){
+      const cls = best >= PASS_MARGIN*100 ? 'score-pass' : 'score-fail';
+      scoreHtml = `<span class="${cls}">${best}%</span>`;
+    }
+    const div = document.createElement('div');
+    div.className = 'card chapter-card';
+    div.onclick = ()=>startQuiz(ch.id);
+    div.innerHTML = `
+      <div class="chapter-info">
+        <div class="chapter-title">Cap. ${ch.num} — ${ch.title}</div>
+        <div class="chapter-meta">${qs.length} domande</div>
+      </div>
+      <div class="chapter-score">${scoreHtml}</div>
+    `;
+    listEl.appendChild(div);
+  });
+  document.getElementById('totalQCount').textContent = total + ' domande totali';
+}
+
+function goHome(){
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-home').classList.remove('hidden');
+  renderHome();
+}
+
+function confirmExit(){
+  if(confirm('Uscire dal quiz? I progressi di questo tentativo andranno persi.')){
+    goHome();
+  }
+}
+
+/* ====================== QUIZ ====================== */
+function startQuiz(chapterId){
+  currentChapter = chapterId;
+  const raw = quizData[chapterId] || [];
+  currentQuestions = shuffle(raw);
+  currentIndex = 0;
+  userAnswers = [];
+  document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  renderQuestion();
+}
+
+function retryQuiz(){
+  startQuiz(currentChapter);
+}
+
+function renderQuestion(){
+  answered = false;
+  selectedOption = null;
+  const q = currentQuestions[currentIndex];
+  document.getElementById('quizProgressText').textContent =
+    `Domanda ${currentIndex+1} di ${currentQuestions.length}`;
+  document.getElementById('progressFill').style.width =
+    ((currentIndex)/currentQuestions.length*100) + '%';
+  document.getElementById('qText').textContent = q.q;
+  const optsWrap = document.getElementById('optionsList');
+  optsWrap.innerHTML = '';
+  const order = shuffle(q.o.map((text,i)=>({text,i})));
+  order.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt.text;
+    btn.onclick = ()=>selectOption(btn, opt.i);
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('nextBtn').textContent = 'Conferma risposta';
+}
+
+function selectOption(btn, originalIndex){
+  if(answered) return;
+  document.querySelectorAll('.option').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedOption = originalIndex;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQuestion(){
+  if(!answered){
+    // conferma risposta -> mostra correzione
+    answered = true;
+    const q = currentQuestions[currentIndex];
+    const isCorrect = selectedOption === q.a;
+    document.querySelectorAll('.option').forEach(b=>{
+      const btnIndex = q.o.indexOf(b.textContent);
+    });
+    // Ricostruiamo il mapping cliccando sugli elementi già in DOM
+    const opts = document.querySelectorAll('.option');
+    opts.forEach(b=>{
+      const text = b.textContent;
+      const idx = q.o.indexOf(text);
+      if(idx === q.a) b.classList.add('correct');
+      else if(b.classList.contains('selected') && idx !== q.a) b.classList.add('wrong');
+      b.onclick = null;
+    });
+    userAnswers.push({q: q, chosen: selectedOption, correct: q.a, isCorrect});
+    document.getElementById('nextBtn').textContent =
+      currentIndex < currentQuestions.length-1 ? 'Prossima domanda →' : 'Vedi risultato';
+    return;
+  }
+  // passa alla prossima
+  currentIndex++;
+  if(currentIndex >= currentQuestions.length){
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult(){
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-result').classList.remove('hidden');
+  const correctCount = userAnswers.filter(a=>a.isCorrect).length;
+  const total = userAnswers.length;
+  const pct = Math.round((correctCount/total)*100);
+  const passed = pct >= PASS_MARGIN*100;
+  saveScore(currentChapter, pct);
+
+  const chMeta = chapterMeta.find(c=>c.id===currentChapter);
+  document.getElementById('resultChapterName').textContent = `Cap. ${chMeta.num} — ${chMeta.title}`;
+  document.getElementById('resultPct').textContent = pct + '%';
+  document.getElementById('resultLabel').textContent = passed ? 'SUPERATO ✓' : 'NON SUPERATO';
+  document.getElementById('resultDetail').textContent = `${correctCount} risposte corrette su ${total} (soglia: 90%)`;
+  document.getElementById('resultBox').className = 'card resultbig ' + (passed ? 'pass' : 'fail');
+
+  const reviewWrap = document.getElementById('reviewSection');
+  const wrongAnswers = userAnswers.filter(a=>!a.isCorrect);
+  if(wrongAnswers.length === 0){
+    reviewWrap.innerHTML = '<div class="card" style="text-align:center;color:var(--good);">🎉 Tutte le risposte corrette! Nessun errore da rivedere.</div>';
+  } else {
+    let html = `<h2 style="margin-top:20px;">Ripasso errori (${wrongAnswers.length})</h2>`;
+    wrongAnswers.forEach(a=>{
+      html += `
+        <div class="card reviewq">
+          <span class="tag no">Sbagliata</span>
+          <div class="qtext" style="font-size:0.98rem;">${a.q.q}</div>
+          <div class="chapter-meta">La tua risposta: <span style="color:var(--bad);">${a.q.o[a.chosen] !== undefined ? a.q.o[a.chosen] : '(nessuna)'}</span></div>
+          <div class="chapter-meta">Risposta corretta: <span style="color:var(--good);">${a.q.o[a.correct]}</span></div>
+          <div class="explbox">💡 ${a.q.e}</div>
+        </div>
+      `;
+    });
+    reviewWrap.innerHTML = html;
+  }
+}
+
+/* ====================== INIT ====================== */
+renderHome();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}</script>
+</body>
+</html>
