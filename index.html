@@ -59,6 +59,9 @@
   .badge-all{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
   .stat-chip{background:var(--card2);border-radius:20px;padding:6px 12px;font-size:0.8rem;color:var(--sub);border:none;}
   .section-label{color:var(--sub);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;margin:18px 0 8px;font-weight:700;}
+  .formula{background:#0d1a26;border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin:10px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.93rem;line-height:1.7;color:#cfe6ff;overflow-x:auto;}
+  #screen-study p{font-size:0.92rem;line-height:1.5;color:var(--text);margin:8px 0;}
+  #screen-study .section-label{margin-top:0;}
   .hidden{display:none !important;}
   .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
   .statbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
@@ -81,7 +84,7 @@
       <button class="stat-chip" onclick="goStats()" style="border:none;cursor:pointer;">📊 My Stats</button>
     </div>
     <div id="chapterList"></div>
-    <div class="footer-note">Each module offers two modes: <strong>Practice</strong> (same question count as the real exam, no time limit) and <strong>Exam</strong> (same count, with the official time limit — auto-submits when time runs out). Pass mark: 75%, the real EASA Part-66 mark. From your Stats page, you can also start a focused <strong>🔁 Review</strong> session on your weakest topic. Modules beyond Mathematics currently have only a handful of sample questions while the question bank is being built out.<br><strong>Update #15 — real worked explanations, English, topic review</strong></div>
+    <div class="footer-note">Each module offers two modes: <strong>Practice</strong> (same question count as the real exam, no time limit) and <strong>Exam</strong> (same count, with the official time limit — auto-submits when time runs out). Pass mark: 75%, the real EASA Part-66 mark. From your Stats page, you can also start a focused <strong>🔁 Review</strong> session on your weakest topic. Modules beyond Mathematics currently have only a handful of sample questions while the question bank is being built out.<br><strong>Update #16 — study notes with formulas and worked examples</strong></div>
   </div>
 
   <!-- STATS SCREEN -->
@@ -92,6 +95,18 @@
     </div>
     <h1 style="font-size:1.15rem;">📊 My Stats</h1>
     <div id="statsBody"></div>
+  </div>
+
+  <!-- TOPIC STUDY SCREEN -->
+  <div id="screen-study" class="hidden">
+    <div class="topbar">
+      <button class="backbtn" onclick="goStats()">&#8592; Stats</button>
+      <span></span>
+    </div>
+    <h1 style="font-size:1.15rem;" id="studyTitle"></h1>
+    <div id="studyBody"></div>
+    <button class="btn" id="studyPracticeBtn">Practise this topic now</button>
+    <button class="btn secondary" onclick="goStats()">Back to stats</button>
   </div>
 
   <!-- QUIZ SCREEN -->
@@ -818,6 +833,212 @@ const questionBank = {
 ],
 };
 
+const topicNotes = {
+"Algebraic Expressions": `
+<div class="card"><div class="section-label">The rule</div>
+<p><strong>Expanding brackets</strong> means multiplying whatever is outside the bracket by <em>every</em> term inside it.</p>
+<div class="formula">a(b + c) = ab + ac</div>
+<p>Watch the signs carefully: a minus outside the bracket flips the sign of every term inside.</p>
+<div class="formula">-a(b + c) = -ab - ac</div>
+</div>
+<div class="card"><div class="section-label">Worked example 1</div>
+<div class="formula">Expand: 3(X + 4)</div>
+<p>Multiply 3 by each term inside:</p>
+<div class="formula">3 × X = 3X<br>3 × 4 = 12<br><strong>Answer: 3X + 12</strong></div>
+</div>
+<div class="card"><div class="section-label">Worked example 2 (minus sign)</div>
+<div class="formula">Expand: 8(X - 6)</div>
+<div class="formula">8 × X = 8X<br>8 × (-6) = -48<br><strong>Answer: 8X - 48</strong></div>
+<p>Common mistake: writing 8X - 6, forgetting to multiply the second term too.</p>
+</div>
+<div class="card"><div class="section-label">Collecting like terms</div>
+<p>Only terms with the same letter can be added together. Numbers go with numbers, X terms go with X terms.</p>
+<div class="formula">Simplify: 10X + 7 + 6X - 1<br>X terms: 10X + 6X = 16X<br>Numbers: 7 - 1 = 6<br><strong>Answer: 16X + 6</strong></div>
+</div>`,
+
+"Algebraic Fractions": `
+<div class="card"><div class="section-label">The rule</div>
+<p>To <strong>add or subtract</strong> fractions you need the same denominator (the bottom number). Find the <strong>lowest common multiple (LCM)</strong> of the two denominators, convert both fractions, then add the tops.</p>
+<div class="formula">a/b + c/d = (ad + bc) / bd</div>
+</div>
+<div class="card"><div class="section-label">Worked example</div>
+<div class="formula">Simplify: X/2 + X/5</div>
+<p>Step 1 — find the LCM of 2 and 5. The smallest number both divide into is <strong>10</strong>.</p>
+<p>Step 2 — convert each fraction to tenths:</p>
+<div class="formula">X/2 = 5X/10 &nbsp;(multiply top and bottom by 5)<br>X/5 = 2X/10 &nbsp;(multiply top and bottom by 2)</div>
+<p>Step 3 — now the denominators match, so add the tops:</p>
+<div class="formula">5X/10 + 2X/10 = <strong>7X/10</strong></div>
+</div>
+<div class="card"><div class="section-label">Quick LCM reminder</div>
+<p>The LCM is the smallest number both denominators divide into evenly:</p>
+<div class="formula">2 and 5 → 10<br>4 and 5 → 20<br>6 and 4 → 12<br>3 and 6 → 6 (6 already works)</div>
+</div>`,
+
+"Linear Equations": `
+<div class="card"><div class="section-label">The rule</div>
+<p>Whatever you do to one side of the equals sign, you must do to the other. The goal is to get X alone on one side.</p>
+<p>Work in this order: <strong>1)</strong> move the numbers away from X by adding or subtracting, <strong>2)</strong> then divide by whatever multiplies X.</p>
+</div>
+<div class="card"><div class="section-label">Worked example 1</div>
+<div class="formula">Solve: 8X + 0 = 40</div>
+<p>There is nothing to subtract (the + 0 does nothing), so divide both sides by 8:</p>
+<div class="formula">8X ÷ 8 = 40 ÷ 8<br><strong>X = 5</strong></div>
+<p>Check: 8 × 5 = 40 ✓</p>
+</div>
+<div class="card"><div class="section-label">Worked example 2 (with a number to move)</div>
+<div class="formula">Solve: 5X - 6 = -31</div>
+<p>Step 1 — the -6 must go. Add 6 to both sides:</p>
+<div class="formula">5X = -31 + 6 = -25</div>
+<p>Step 2 — divide both sides by 5:</p>
+<div class="formula"><strong>X = -5</strong></div>
+<p>Check: 5 × (-5) - 6 = -25 - 6 = -31 ✓</p>
+</div>
+<div class="card"><div class="section-label">Worked example 3 (X on both sides)</div>
+<div class="formula">Solve: 5X + 1 = 1X + 33</div>
+<p>Step 1 — collect the X terms on the left, the numbers on the right:</p>
+<div class="formula">5X - 1X = 33 - 1<br>4X = 32</div>
+<p>Step 2 — divide by 4:</p>
+<div class="formula"><strong>X = 8</strong></div>
+</div>`,
+
+"Indices and Powers": `
+<div class="card"><div class="section-label">The laws of indices</div>
+<div class="formula">
+Multiplying → <strong>add</strong> the powers:<br>aᵐ × aⁿ = a⁽ᵐ⁺ⁿ⁾<br><br>
+Dividing → <strong>subtract</strong> the powers:<br>aᵐ ÷ aⁿ = a⁽ᵐ⁻ⁿ⁾<br><br>
+Power of a power → <strong>multiply</strong>:<br>(aᵐ)ⁿ = a⁽ᵐⁿ⁾<br><br>
+Anything to the power 0 = 1:<br>a⁰ = 1
+</div>
+<p><em>Important:</em> these only work when the base (the big number) is the same.</p>
+</div>
+<div class="card"><div class="section-label">Negative exponents</div>
+<p>A negative power does <strong>not</strong> make the answer negative. It means "one over" — the reciprocal.</p>
+<div class="formula">a⁻ⁿ = 1 / aⁿ</div>
+<p>Worked example:</p>
+<div class="formula">4⁻² = 1/4² = 1/16</div>
+<p>Common mistake: answering -1/4². The minus moves the term to the bottom of a fraction; it does not make it negative.</p>
+</div>
+<div class="card"><div class="section-label">Fractional exponents = roots</div>
+<div class="formula">a^(1/2) = √a &nbsp;(square root)<br>a^(1/3) = ∛a &nbsp;(cube root)<br>a^(m/n) = ⁿ√(aᵐ)</div>
+<p>Worked examples:</p>
+<div class="formula">100^(1/2) = √100 = 10<br>27^(1/3) = ∛27 = 3<br>8^(2/3) = (∛8)² = 2² = 4</div>
+</div>`,
+
+"Binary System": `
+<div class="card"><div class="section-label">What binary is</div>
+<p>Binary is base 2: only the digits <strong>0</strong> and <strong>1</strong> exist. Each position, reading from the right, is worth double the one before it.</p>
+<div class="formula">position value: … 64 &nbsp; 32 &nbsp; 16 &nbsp; 8 &nbsp; 4 &nbsp; 2 &nbsp; 1<br>power of 2: … 2⁶ &nbsp; 2⁵ &nbsp; 2⁴ &nbsp; 2³ &nbsp; 2² &nbsp; 2¹ &nbsp; 2⁰</div>
+</div>
+<div class="card"><div class="section-label">Binary → decimal (add up the ON positions)</div>
+<div class="formula">Convert 111111 to decimal</div>
+<p>Write the position values under each digit, then add the ones with a 1 above them:</p>
+<div class="formula">
+1&nbsp;&nbsp;1&nbsp;&nbsp;1&nbsp;&nbsp;1&nbsp;&nbsp;1&nbsp;&nbsp;1<br>
+32 &nbsp;16 &nbsp;8 &nbsp;&nbsp;4 &nbsp;&nbsp;2 &nbsp;&nbsp;1<br><br>
+32 + 16 + 8 + 4 + 2 + 1 = <strong>63</strong>
+</div>
+<p>Another one — 10110:</p>
+<div class="formula">
+1&nbsp;&nbsp;0&nbsp;&nbsp;1&nbsp;&nbsp;1&nbsp;&nbsp;0<br>
+16 &nbsp;8 &nbsp;&nbsp;4 &nbsp;&nbsp;2 &nbsp;&nbsp;1<br><br>
+16 + 4 + 2 = <strong>22</strong> &nbsp;(skip the positions showing 0)
+</div>
+</div>
+<div class="card"><div class="section-label">Decimal → binary (divide by 2, keep the remainders)</div>
+<div class="formula">Convert 25 to binary</div>
+<p>Divide by 2 over and over, writing down each remainder, then read the remainders <strong>bottom to top</strong>:</p>
+<div class="formula">
+25 ÷ 2 = 12 remainder <strong>1</strong><br>
+12 ÷ 2 = 6 &nbsp;remainder <strong>0</strong><br>
+6 ÷ 2 = 3 &nbsp;&nbsp;remainder <strong>0</strong><br>
+3 ÷ 2 = 1 &nbsp;&nbsp;remainder <strong>1</strong><br>
+1 ÷ 2 = 0 &nbsp;&nbsp;remainder <strong>1</strong><br><br>
+Reading upward: <strong>11001</strong>
+</div>
+</div>`,
+
+"Hexadecimal System": `
+<div class="card"><div class="section-label">What hexadecimal is</div>
+<p>Hex is base 16. Because we need 16 single symbols but only have ten digits, letters take over after 9:</p>
+<div class="formula">A = 10 &nbsp; B = 11 &nbsp; C = 12<br>D = 13 &nbsp; E = 14 &nbsp; F = 15</div>
+<p>Each position, from the right, is worth 16 times more than the one before:</p>
+<div class="formula">position value: … 4096 &nbsp; 256 &nbsp; 16 &nbsp; 1<br>power of 16: … 16³ &nbsp; 16² &nbsp; 16¹ &nbsp; 16⁰</div>
+</div>
+<div class="card"><div class="section-label">Hex → decimal (multiply each digit by its position value)</div>
+<div class="formula">Convert 1A3 to decimal</div>
+<div class="formula">
+1 → 1 × 256 = 256<br>
+A → 10 × 16 = 160<br>
+3 → 3 × 1 = 3<br><br>
+256 + 160 + 3 = <strong>419</strong>
+</div>
+<p>Another — FE:</p>
+<div class="formula">F → 15 × 16 = 240<br>E → 14 × 1 = 14<br><br>240 + 14 = <strong>254</strong></div>
+</div>
+<div class="card"><div class="section-label">Decimal → hex (divide by 16, keep the remainders)</div>
+<p>This is the one that confused you. You do <strong>not</strong> get the answer from a single division — you divide repeatedly and collect the <em>remainders</em>, then read them bottom to top.</p>
+<div class="formula">Convert 437 to hexadecimal</div>
+<div class="formula">
+437 ÷ 16 = 27 remainder <strong>5</strong><br>
+27 ÷ 16 = 1 &nbsp;remainder <strong>11 → B</strong><br>
+1 ÷ 16 = 0 &nbsp;&nbsp;remainder <strong>1</strong><br><br>
+Reading upward: <strong>1B5</strong>
+</div>
+<p>Check it backwards: 1×256 + 11×16 + 5 = 256 + 176 + 5 = 437 ✓</p>
+<p>Remember to convert any remainder of 10–15 into its letter before writing it down.</p>
+</div>`,
+
+"Simultaneous Equations": `
+<div class="card"><div class="section-label">What you are doing</div>
+<p>You have two equations with two unknowns (X and Y). The <strong>elimination method</strong> gets rid of one unknown so you can solve for the other.</p>
+<p>The trick: make the coefficient (the number in front) of either X or Y <strong>the same</strong> in both equations, then add or subtract the equations to cancel it out.</p>
+</div>
+<div class="card"><div class="section-label">Worked example — full process</div>
+<div class="formula">1X + 3Y = 24<br>2X + 2Y = 20</div>
+<p><strong>Step 1 — pick a variable to eliminate.</strong> Let's eliminate X. The coefficients are 1 and 2. Multiply the first equation by 2 so both have 2X:</p>
+<div class="formula">(1X + 3Y = 24) × 2 → <strong>2X + 6Y = 48</strong><br>second equation stays: 2X + 2Y = 20</div>
+<p><strong>Step 2 — subtract</strong> the second from the first. The 2X cancels:</p>
+<div class="formula">(2X - 2X) + (6Y - 2Y) = 48 - 20<br>4Y = 28<br><strong>Y = 7</strong></div>
+<p><strong>Step 3 — substitute</strong> Y = 7 back into either original equation to find X:</p>
+<div class="formula">1X + 3(7) = 24<br>X + 21 = 24<br><strong>X = 3</strong></div>
+<p><strong>Step 4 — check</strong> in the other equation: 2(3) + 2(7) = 6 + 14 = 20 ✓</p>
+</div>
+<div class="card"><div class="section-label">Add or subtract?</div>
+<p>After matching the coefficients:</p>
+<div class="formula">Same sign (both +2X) → <strong>subtract</strong> the equations<br>Opposite signs (+2X and -2X) → <strong>add</strong> them</div>
+</div>`,
+
+"Quadratic Equations": `
+<div class="card"><div class="section-label">The formula — memorise this one</div>
+<p>A quadratic is any equation in this shape:</p>
+<div class="formula">aX² + bX + c = 0</div>
+<p>The solutions (there are usually two) come from the <strong>quadratic formula</strong>:</p>
+<div class="formula" style="font-size:1.05rem;"><strong>X = ( -b ± √(b² - 4ac) ) / 2a</strong></div>
+<p>The part under the square root, <strong>b² - 4ac</strong>, is called the <strong>discriminant</strong>. It tells you what to expect:</p>
+<div class="formula">positive → two different answers<br>zero → one repeated answer<br>negative → no real answers</div>
+</div>
+<div class="card"><div class="section-label">Worked example — step by step</div>
+<div class="formula">Solve: X² - 2X - 48 = 0</div>
+<p><strong>Step 1 — identify a, b and c.</strong> Read them straight off the equation, keeping the signs:</p>
+<div class="formula">a = 1 &nbsp;(nothing in front of X² means 1)<br>b = -2<br>c = -48</div>
+<p><strong>Step 2 — work out the discriminant</strong> b² - 4ac:</p>
+<div class="formula">(-2)² - 4 × 1 × (-48)<br>= 4 + 192<br>= <strong>196</strong></div>
+<p>Note: minus times minus gives plus, which is why -4×(-48) became +192.</p>
+<p><strong>Step 3 — square root it:</strong></p>
+<div class="formula">√196 = 14</div>
+<p><strong>Step 4 — put everything into the formula:</strong></p>
+<div class="formula">X = ( -(-2) ± 14 ) / (2 × 1)<br>X = ( 2 ± 14 ) / 2</div>
+<p><strong>Step 5 — split into the two answers:</strong></p>
+<div class="formula">X = (2 + 14) / 2 = 16/2 = <strong>8</strong><br>X = (2 - 14) / 2 = -12/2 = <strong>-6</strong></div>
+<p>So X = 8 or X = -6. Check: 8² - 2(8) - 48 = 64 - 16 - 48 = 0 ✓</p>
+</div>
+<div class="card"><div class="section-label">The shortcut — factorising</div>
+<p>When the numbers are friendly, you can skip the formula. Look for two numbers that <strong>multiply to give c</strong> and <strong>add to give b</strong>.</p>
+<div class="formula">X² - 2X - 48 = 0<br>Need: two numbers multiplying to -48, adding to -2<br>-8 and +6 → (-8)(6) = -48 ✓, (-8)+(6) = -2 ✓<br><br>So: (X - 8)(X + 6) = 0<br>Each bracket can be zero:<br>X - 8 = 0 → <strong>X = 8</strong><br>X + 6 = 0 → <strong>X = -6</strong></div>
+<p>Notice the signs flip: the bracket (X - 8) gives the answer X = +8.</p>
+</div>`
+};
+
 const moduleMeta = [
   {num:"1", title:"Mathematics", len:{b11:32,b2:32}, min:{b11:40,b2:40}},
   {num:"2", title:"Physics", len:{b11:52,b2:52}, min:{b11:65,b2:65}},
@@ -937,6 +1158,7 @@ function goHome(){
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-result').classList.add('hidden');
   document.getElementById('screen-stats').classList.add('hidden');
+  document.getElementById('screen-study').classList.add('hidden');
   document.getElementById('screen-home').classList.remove('hidden');
   renderHome();
 }
@@ -949,8 +1171,13 @@ function confirmExit(){
 
 /* ====================== STATS SCREEN ====================== */
 function goStats(){
+  clearTimer();
   document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-study').classList.add('hidden');
   document.getElementById('screen-stats').classList.remove('hidden');
+  window.scrollTo(0,0);
   renderStats();
 }
 
@@ -996,7 +1223,7 @@ function renderStats(){
       html += `<div class="card">
         <div class="chapter-title"><span class="modtag">M${r.modNum}</span>${r.topic}</div>
         <div class="chapter-meta">${r.attempts} answered · <span style="color:${r.acc>=75?'var(--good)':'var(--bad)'}">${r.acc}% correct</span> · ${r.wrong} wrong</div>
-        <button class="smallbtn practice" style="margin-top:8px;" onclick="startTopicReview('${r.modNum}', ${JSON.stringify(r.topic)})">🔁 Review this topic (${poolSize} in bank)</button>
+        <button class="smallbtn practice" style="margin-top:8px;" onclick="openTopicStudy('${r.modNum}', '${r.topic.replace(/'/g, "\\'")}')">📖 Study &amp; review this topic (${poolSize} in bank)</button>
       </div>`;
     });
   } else {
@@ -1033,6 +1260,33 @@ function clearTimer(){
   document.getElementById('timerPill').classList.add('hidden');
 }
 
+
+/* ====================== TOPIC STUDY SCREEN ====================== */
+let studyModNum = null, studyTopic = null;
+
+function openTopicStudy(modNum, topic){
+  studyModNum = modNum;
+  studyTopic = topic;
+  document.getElementById('screen-stats').classList.add('hidden');
+  document.getElementById('screen-home').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-study').classList.remove('hidden');
+  window.scrollTo(0,0);
+
+  document.getElementById('studyTitle').textContent = '📖 ' + topic;
+  const notes = topicNotes[topic];
+  document.getElementById('studyBody').innerHTML = notes
+    ? notes
+    : '<div class="card" style="color:var(--sub);">Study notes for this topic have not been written yet. You can still practise the questions below — each wrong answer shows a full worked explanation.</div>';
+
+  const pool = (questionBank[modNum]||[]).filter(q=>(q.t||'')===topic);
+  const btn = document.getElementById('studyPracticeBtn');
+  btn.textContent = `Practise this topic now (${Math.min(pool.length,20)} questions)`;
+  btn.disabled = pool.length === 0;
+  btn.onclick = ()=>startTopicReview(modNum, topic);
+}
+
 function startTopicReview(modNum, topic){
   const pool = (questionBank[modNum] || []).filter(q => (q.t||'') === topic);
   if(pool.length === 0) return;
@@ -1048,10 +1302,12 @@ function startTopicReview(modNum, topic){
   answered = false;
 
   document.getElementById('screen-stats').classList.add('hidden');
+  document.getElementById('screen-study').classList.add('hidden');
   document.getElementById('screen-home').classList.add('hidden');
   document.getElementById('screen-result').classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
   document.getElementById('timerPill').classList.add('hidden');
+  window.scrollTo(0,0);
 
   renderQuestion();
 }
@@ -1214,6 +1470,7 @@ function finishSession(timedOut){
           <div class="chapter-meta">Your answer: <span style="color:var(--bad);">${a.q.o[a.chosen] !== undefined ? a.q.o[a.chosen] : '(none)'}</span></div>
           <div class="chapter-meta">Correct answer: <span style="color:var(--good);">${a.q.o[a.correct]}</span></div>
           <div class="explbox">💡 ${a.q.e}</div>
+          ${topicNotes[a.q.t] ? `<button class="smallbtn practice" style="margin-top:8px;" onclick="openTopicStudy('${currentModNum}', '${(a.q.t||'').replace(/'/g, "\\'")}')">📖 Study the theory for ${a.q.t}</button>` : ''}
         </div>
       `;
     });
