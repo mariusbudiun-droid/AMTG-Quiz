@@ -136,7 +136,7 @@
       <div class="stat-chip" id="totalQCount">-- questions</div>
       <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="cursor:pointer;font-weight:700;"></button>
     </div>
-    <div class="footer-note"><strong>Update #17</strong> — larger question bank, split menus, exportable reports</div>
+    <div class="footer-note"><strong>Update #18</strong> — fixes auto-update on the home screen</div>
   </div>
 
   <!-- MODULE LIST SCREEN -->
@@ -1797,6 +1797,51 @@ function finishSession(timedOut){
 /* ====================== INIT ====================== */
 renderHome();
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));}</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      // Ask the browser to look for a new version right away, and again
+      // whenever the app is brought back to the foreground.
+      reg.update().catch(()=>{});
+      document.addEventListener("visibilitychange", () => {
+        if(document.visibilityState === "visible") reg.update().catch(()=>{});
+      });
+      // When a new worker has installed and there is already a controller,
+      // a newer build is ready: tell the user instead of silently waiting.
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener("statechange", () => {
+          if(nw.state === "installed" && navigator.serviceWorker.controller){
+            showUpdateBanner(nw);
+          }
+        });
+      });
+    }).catch(()=>{});
+
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if(reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
+  });
+}
+
+function showUpdateBanner(worker){
+  if(document.getElementById("updateBanner")) return;
+  const bar = document.createElement("div");
+  bar.id = "updateBanner";
+  bar.style.cssText = "position:fixed;left:12px;right:12px;bottom:16px;background:#3ea6ff;color:#04121c;padding:14px 16px;border-radius:12px;font-weight:700;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:0.95rem;";
+  bar.innerHTML = '<span style="flex:1;">A new version is available</span>';
+  const btn = document.createElement("button");
+  btn.textContent = "Update";
+  btn.style.cssText = "background:#04121c;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:0.95rem;";
+  btn.onclick = () => { worker.postMessage("SKIP_WAITING"); btn.textContent = "Updating…"; btn.disabled = true; };
+  bar.appendChild(btn);
+  document.body.appendChild(bar);
+}
+</script>
 </body>
 </html>
