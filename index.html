@@ -36,6 +36,12 @@
   .progressfill{height:100%;background:var(--accent);transition:width .2s;}
   .qtext{font-size:1.05rem;line-height:1.45;margin-bottom:16px;font-weight:500;}
   .qmeta{color:var(--sub);font-size:0.82rem;margin-bottom:6px;}
+  .qnav{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 12px;}
+  .qnav .pill{width:30px;height:30px;flex:0 0 auto;border-radius:8px;background:var(--card2);border:1.5px solid var(--border);color:var(--sub);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .qnav .pill.done{background:#16324a;border-color:var(--accent);color:var(--text);}
+  .qnav .pill.skipped{border-color:var(--warn);color:var(--warn);}
+  .qnav .pill.current{outline:2px solid var(--accent);outline-offset:1px;}
+  .skipnote{color:var(--warn);font-size:0.82rem;margin:4px 0 10px;}
   .option{display:block;width:100%;text-align:left;background:var(--card2);border:1.5px solid var(--border);color:var(--text);padding:13px 14px;border-radius:10px;margin-bottom:10px;font-size:0.97rem;cursor:pointer;line-height:1.35;}
   .option:active{background:#243646;}
   .option.selected{border-color:var(--accent);background:#1c3040;}
@@ -152,7 +158,7 @@
       <div class="stat-chip" id="totalQCount">-- questions</div>
       <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="cursor:pointer;font-weight:700;"></button>
     </div>
-    <div class="footer-note"><strong>Update #24</strong> — ~2000 questions per difficulty tier reached</div>
+    <div class="footer-note"><strong>Update #25</strong> — skip a question and answer it later, in Practice/Exam/Review</div>
   </div>
 
   <!-- MODULE LIST SCREEN -->
@@ -227,11 +233,15 @@
     </div>
     <div class="qmeta" id="quizProgressText"></div>
     <div class="progressbar"><div class="progressfill" id="progressFill"></div></div>
+    <div class="qnav" id="qNavRow"></div>
     <div class="card">
       <div class="qtext" id="qText"></div>
       <div id="optionsList"></div>
     </div>
+    <div id="skipNote" class="skipnote hidden"></div>
     <button class="btn" id="nextBtn" disabled onclick="nextQuestion()">Confirm answer</button>
+    <button class="btn secondary" id="skipBtn" onclick="skipQuestion()">Skip · answer later</button>
+    <button class="btn secondary hidden" id="submitNowBtn" onclick="confirmSubmitNow()">Submit now</button>
   </div>
 
   <!-- RESULT SCREEN -->
@@ -5941,7 +5951,7 @@ function startTopicReview(modNum, topic){
   currentQuestions = pickQuestions(pool, len, modNum);
   markSeen(modNum, currentQuestions);
   currentIndex = 0;
-  userAnswers = [];
+  userAnswers = new Array(currentQuestions.length).fill(null);
   selectedOption = null;
   answered = false;
 
@@ -5968,7 +5978,7 @@ function startSession(modNum, mode, difficulty){
   currentQuestions = pickQuestions(pool, len, modNum + (difficulty ? ('_'+difficulty) : ''));
   markSeen(modNum + (difficulty ? ('_'+difficulty) : ''), currentQuestions);
   currentIndex = 0;
-  userAnswers = [];
+  userAnswers = new Array(currentQuestions.length).fill(null);
   selectedOption = null;
   answered = false;
 
@@ -6010,14 +6020,47 @@ function retrySameMode(){
   }
 }
 
+function goToNextPending(fromIndex){
+  const n = currentQuestions.length;
+  for(let step=1; step<n; step++){
+    const idx = (fromIndex + step) % n;
+    if(!userAnswers[idx]) return idx;
+  }
+  return -1;
+}
+
+function renderQNav(){
+  const nav = document.getElementById('qNavRow');
+  if(currentQuestions.length > 60){ nav.classList.add('hidden'); return; }
+  nav.classList.remove('hidden');
+  nav.innerHTML = '';
+  currentQuestions.forEach((q,i)=>{
+    const p = document.createElement('div');
+    let cls = 'pill';
+    if(i === currentIndex) cls += ' current';
+    if(userAnswers[i]) cls += ' done';
+    else if(i !== currentIndex) cls += ' skipped';
+    p.className = cls;
+    p.textContent = i+1;
+    p.onclick = ()=>jumpToQuestion(i);
+    nav.appendChild(p);
+  });
+}
+
+function jumpToQuestion(i){
+  currentIndex = i;
+  renderQuestion();
+}
+
 function renderQuestion(){
-  answered = false;
-  selectedOption = null;
+  answered = !!userAnswers[currentIndex];
+  selectedOption = answered ? userAnswers[currentIndex].chosen : null;
   const q = currentQuestions[currentIndex];
   document.getElementById('quizProgressText').textContent =
     `Question ${currentIndex+1} of ${currentQuestions.length}`;
+  const answeredCount = userAnswers.filter(Boolean).length;
   document.getElementById('progressFill').style.width =
-    ((currentIndex)/currentQuestions.length*100) + '%';
+    (answeredCount/currentQuestions.length*100) + '%';
   document.getElementById('qText').textContent = q.q;
   const optsWrap = document.getElementById('optionsList');
   optsWrap.innerHTML = '';
@@ -6026,11 +6069,36 @@ function renderQuestion(){
     const btn = document.createElement('button');
     btn.className = 'option';
     btn.textContent = opt.text;
-    btn.onclick = ()=>selectOption(btn, opt.i);
+    if(answered){
+      if(opt.i === q.a) btn.classList.add('correct');
+      else if(opt.i === selectedOption) btn.classList.add('wrong');
+    } else {
+      btn.onclick = ()=>selectOption(btn, opt.i);
+    }
     optsWrap.appendChild(btn);
   });
-  document.getElementById('nextBtn').disabled = true;
-  document.getElementById('nextBtn').textContent = 'Confirm answer';
+
+  const nextBtn = document.getElementById('nextBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const submitNowBtn = document.getElementById('submitNowBtn');
+  const skipNote = document.getElementById('skipNote');
+  const pendingLeft = userAnswers.some((a,i)=>i!==currentIndex && !a);
+
+  if(answered){
+    nextBtn.disabled = false;
+    nextBtn.textContent = goToNextPending(currentIndex) === -1 ? 'Finish' : 'Next question →';
+    skipBtn.classList.add('hidden');
+    skipNote.classList.add('hidden');
+  } else {
+    nextBtn.disabled = true;
+    nextBtn.textContent = 'Confirm answer';
+    skipBtn.classList.toggle('hidden', !pendingLeft && goToNextPending(currentIndex) === -1);
+    skipNote.classList.add('hidden');
+  }
+
+  submitNowBtn.classList.toggle('hidden', answeredCount === 0 || !userAnswers.some(a=>!a));
+
+  renderQNav();
 }
 
 function selectOption(btn, originalIndex){
@@ -6039,6 +6107,25 @@ function selectOption(btn, originalIndex){
   btn.classList.add('selected');
   selectedOption = originalIndex;
   document.getElementById('nextBtn').disabled = false;
+}
+
+function skipQuestion(){
+  if(answered) return;
+  const nextIdx = goToNextPending(currentIndex);
+  if(nextIdx === -1){
+    document.getElementById('skipNote').textContent = 'No other unanswered questions left — answer this one to finish.';
+    document.getElementById('skipNote').classList.remove('hidden');
+    return;
+  }
+  currentIndex = nextIdx;
+  renderQuestion();
+}
+
+function confirmSubmitNow(){
+  const answeredCount = userAnswers.filter(Boolean).length;
+  const left = currentQuestions.length - answeredCount;
+  if(left > 0 && !window.confirm(`${left} question(s) still unanswered — they will count as wrong. Submit now?`)) return;
+  finishSession(false);
 }
 
 function nextQuestion(){
@@ -6054,15 +6141,20 @@ function nextQuestion(){
       else if(b.classList.contains('selected') && idx !== q.a) b.classList.add('wrong');
       b.onclick = null;
     });
-    userAnswers.push({q: q, chosen: selectedOption, correct: q.a, isCorrect});
+    userAnswers[currentIndex] = {q: q, chosen: selectedOption, correct: q.a, isCorrect};
+    document.getElementById('skipBtn').classList.add('hidden');
     document.getElementById('nextBtn').textContent =
-      currentIndex < currentQuestions.length-1 ? 'Next question →' : 'Finish';
+      goToNextPending(currentIndex) === -1 ? 'Finish' : 'Next question →';
+    renderQNav();
+    document.getElementById('submitNowBtn').classList.toggle('hidden',
+      userAnswers.filter(Boolean).length === 0 || !userAnswers.some(a=>!a));
     return;
   }
-  currentIndex++;
-  if(currentIndex >= currentQuestions.length){
+  const nextIdx = goToNextPending(currentIndex);
+  if(nextIdx === -1){
     finishSession(false);
   } else {
+    currentIndex = nextIdx;
     renderQuestion();
   }
 }
@@ -6071,15 +6163,16 @@ function finishSession(timedOut){
   clearTimer();
   showScreen('screen-result');
 
-  const correctCount = userAnswers.filter(a=>a.isCorrect).length;
+  const answeredList = userAnswers.filter(Boolean);
+  const correctCount = answeredList.filter(a=>a.isCorrect).length;
   const total = currentQuestions.length;
-  const answeredCount = userAnswers.length;
+  const answeredCount = answeredList.length;
   const pct = total ? Math.round((correctCount/total)*100) : 0;
   const passed = pct >= 75;
 
   const scoreKey = (currentMode==='exam'?('exam_'+(currentDifficulty?currentDifficulty+'_':'')):currentMode==='review'?'review_':'practice_') + currentModNum;
   saveScore(scoreKey, pct);
-  recordTopicResults(currentModNum, userAnswers);
+  recordTopicResults(currentModNum, answeredList);
   logSession({
     modNum: currentModNum, mode: currentMode, pct: pct, correct: correctCount,
     total: total, passed: passed, date: new Date().toISOString(),
@@ -6095,11 +6188,12 @@ function finishSession(timedOut){
   document.getElementById('resultLabel').textContent = currentMode==='review' ? (passed ? 'Good progress ✓' : 'Keep practising') : (passed ? 'PASSED ✓' : 'NOT PASSED');
   let detail = `${correctCount} correct out of ${total}` + (currentMode==='review' ? '' : ' (pass mark: 75%)');
   if(timedOut) detail += ' — time ran out, unanswered questions counted as wrong';
+  else if(answeredCount < total) detail += ' — submitted early, unanswered questions counted as wrong';
   document.getElementById('resultDetail').textContent = detail;
   document.getElementById('resultBox').className = 'card resultbig ' + (passed ? 'pass' : 'fail');
 
   const reviewWrap = document.getElementById('reviewSection');
-  const wrongAnswers = userAnswers.filter(a=>!a.isCorrect);
+  const wrongAnswers = answeredList.filter(a=>!a.isCorrect);
   if(wrongAnswers.length === 0 && answeredCount === total){
     reviewWrap.innerHTML = '<div class="card" style="text-align:center;color:var(--good);">🎉 All answers correct! Nothing to review.</div>';
   } else {
@@ -6117,7 +6211,7 @@ function finishSession(timedOut){
       `;
     });
     if(answeredCount < total){
-      html += `<div class="card" style="text-align:center;color:var(--sub);">${total-answeredCount} question(s) left unanswered when time ran out.</div>`;
+      html += `<div class="card" style="text-align:center;color:var(--sub);">${total-answeredCount} question(s) left unanswered${timedOut ? ' when time ran out' : ''}.</div>`;
     }
     reviewWrap.innerHTML = html;
   }
