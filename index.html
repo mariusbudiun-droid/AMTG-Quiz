@@ -158,7 +158,7 @@
       <div class="stat-chip" id="totalQCount">-- questions</div>
       <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="cursor:pointer;font-weight:700;"></button>
     </div>
-    <div class="footer-note"><strong>Update #26</strong> — Module 1 complete: Geometry (constructions, graphs, trigonometry) added, weighted 1/3 Arithmetic · 1/3 Algebra · 1/3 Geometry</div>
+    <div class="footer-note"><strong>Update #27</strong> — unanswered questions now count as wrong in topic stats and session review, not just the score</div>
   </div>
 
   <!-- MODULE LIST SCREEN -->
@@ -1632,7 +1632,10 @@ function finishSession(timedOut){
 
   const scoreKey = (currentMode==='exam'?('exam_'+(currentDifficulty?currentDifficulty+'_':'')):currentMode==='review'?'review_':'practice_') + currentModNum;
   saveScore(scoreKey, pct);
-  recordTopicResults(currentModNum, answeredList);
+  // Unanswered/skipped questions count as wrong for topic stats too, not just
+  // for the score: if you didn't answer, it means you didn't know it.
+  const fullResultsList = currentQuestions.map((q,i)=> userAnswers[i] || {q:q, chosen:null, correct:q.a, isCorrect:false});
+  recordTopicResults(currentModNum, fullResultsList);
   logSession({
     modNum: currentModNum, mode: currentMode, pct: pct, correct: correctCount,
     total: total, passed: passed, date: new Date().toISOString(),
@@ -1653,26 +1656,26 @@ function finishSession(timedOut){
   document.getElementById('resultBox').className = 'card resultbig ' + (passed ? 'pass' : 'fail');
 
   const reviewWrap = document.getElementById('reviewSection');
-  const wrongAnswers = answeredList.filter(a=>!a.isCorrect);
-  if(wrongAnswers.length === 0 && answeredCount === total){
+  // Skipped/unanswered questions are reviewed here too, since not answering
+  // counts the same as answering wrong (see fullResultsList above).
+  const wrongAnswers = fullResultsList.filter(a=>!a.isCorrect);
+  if(wrongAnswers.length === 0){
     reviewWrap.innerHTML = '<div class="card" style="text-align:center;color:var(--good);">🎉 All answers correct! Nothing to review.</div>';
   } else {
     let html = `<h2 style="margin-top:20px;">Review mistakes (${wrongAnswers.length})</h2>`;
     wrongAnswers.forEach(a=>{
+      const wasSkipped = a.chosen === null || a.chosen === undefined;
       html += `
         <div class="card reviewq">
-          <span class="tag no">Incorrect</span>
+          <span class="tag no">${wasSkipped ? 'Not answered' : 'Incorrect'}</span>
           <div class="qtext" style="font-size:0.98rem;">${a.q.q}</div>
-          <div class="chapter-meta">Your answer: <span style="color:var(--bad);">${a.q.o[a.chosen] !== undefined ? a.q.o[a.chosen] : '(none)'}</span></div>
+          ${wasSkipped ? '' : `<div class="chapter-meta">Your answer: <span style="color:var(--bad);">${a.q.o[a.chosen]}</span></div>`}
           <div class="chapter-meta">Correct answer: <span style="color:var(--good);">${a.q.o[a.correct]}</span></div>
           <div class="explbox">💡 ${a.q.e}</div>
           ${topicNotes[a.q.t] ? `<button class="smallbtn practice" style="margin-top:8px;" onclick="openTopicStudy('${currentModNum}', '${(a.q.t||'').replace(/'/g, "\\'")}')">📖 Study the theory for ${a.q.t}</button>` : ''}
         </div>
       `;
     });
-    if(answeredCount < total){
-      html += `<div class="card" style="text-align:center;color:var(--sub);">${total-answeredCount} question(s) left unanswered${timedOut ? ' when time ran out' : ''}.</div>`;
-    }
     reviewWrap.innerHTML = html;
   }
 }
