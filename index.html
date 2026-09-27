@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Part-66 Quiz</title>
+<title>B1B2 Trainer</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f1720">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -12,8 +12,22 @@
     --bg:#0f1720; --card:#182533; --card2:#1f2f40; --text:#e8eef4; --sub:#93a4b8;
     --accent:#3ea6ff; --good:#3ecf8e; --bad:#ff5d5d; --warn:#ffb454; --border:#2a3b4d;
   }
+  /* Light palette: used when the user picks Light explicitly, or when the
+     mode is Auto and the system is set to light (media query below). */
+  :root[data-theme="light"]{
+    --bg:#f4f7fa; --card:#ffffff; --card2:#eef2f6; --text:#12202e; --sub:#5b6b7d;
+    --accent:#1478d6; --good:#1f9d63; --bad:#d8392b; --warn:#b9700a; --border:#dbe3ea;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]):not([data-theme="light"]){
+      --bg:#f4f7fa; --card:#ffffff; --card2:#eef2f6; --text:#12202e; --sub:#5b6b7d;
+      --accent:#1478d6; --good:#1f9d63; --bad:#d8392b; --warn:#b9700a; --border:#dbe3ea;
+    }
+  }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .15s,color .15s;}
+  .themebtn{background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:1.1rem;width:38px;height:38px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .homehead{display:flex;justify-content:space-between;align-items:flex-start;}
   .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px;}
   h1{font-size:1.3rem;margin:6px 0 2px;}
   h2{font-size:1.05rem;margin:0 0 12px;color:var(--sub);font-weight:500;}
@@ -100,13 +114,27 @@
   .statbox.good .num{color:var(--good);}
   .statbox.bad .num{color:var(--bad);}
 </style>
+<script>
+// Applied as early as possible (before first paint) to avoid a flash of the
+// wrong theme: if the user has picked Light or Dark explicitly, set it now;
+// "Auto" is left alone and handled purely by the prefers-color-scheme CSS.
+(function(){
+  try{
+    var t = localStorage.getItem('p66_theme');
+    if(t==='light' || t==='dark') document.documentElement.setAttribute('data-theme', t);
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
 
   <!-- MAIN MENU -->
   <div id="screen-home">
-    <h1>&#9992;&#65039; Part-66 Quiz</h1>
+    <div class="homehead">
+      <h1>&#9992;&#65039; B1B2 Trainer</h1>
+      <button class="themebtn" id="themeToggleBtn" onclick="cycleTheme()"></button>
+    </div>
     <h2 id="homeSubtitle">EASA Part-66 exam preparation</h2>
 
     <div class="menucard" onclick="goModuleList('practice')">
@@ -158,7 +186,7 @@
       <div class="stat-chip" id="totalQCount">-- questions</div>
       <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="cursor:pointer;font-weight:700;"></button>
     </div>
-    <div class="footer-note"><strong>Update #27</strong> — unanswered questions now count as wrong in topic stats and session review, not just the score</div>
+    <div class="footer-note"><strong>Update #28</strong> — renamed to B1B2 Trainer, new icon, light/dark/auto theme</div>
   </div>
 
   <!-- MODULE LIST SCREEN -->
@@ -1680,7 +1708,42 @@ function finishSession(timedOut){
   }
 }
 
+/* ====================== THEME (light / dark / auto) ====================== */
+const THEME_KEY = 'p66_theme';
+function getTheme(){ try{ return localStorage.getItem(THEME_KEY) || 'auto'; }catch(e){ return 'auto'; } }
+function setStoredTheme(t){ try{ localStorage.setItem(THEME_KEY, t); }catch(e){} }
+function effectiveThemeIsLight(){
+  const t = getTheme();
+  if(t === 'light') return true;
+  if(t === 'dark') return false;
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+}
+function applyTheme(){
+  const t = getTheme();
+  if(t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  else document.documentElement.removeAttribute('data-theme');
+  const btn = document.getElementById('themeToggleBtn');
+  if(btn){
+    btn.textContent = t === 'light' ? '☀️' : t === 'dark' ? '🌙' : '🌗';
+    btn.title = 'Theme: ' + (t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Auto (system)');
+  }
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme) metaTheme.setAttribute('content', effectiveThemeIsLight() ? '#f4f7fa' : '#0f1720');
+}
+function cycleTheme(){
+  const order = ['auto','light','dark'];
+  const next = order[(order.indexOf(getTheme()) + 1) % order.length];
+  setStoredTheme(next);
+  applyTheme();
+}
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()=>{
+    if(getTheme() === 'auto') applyTheme();
+  });
+}
+
 /* ====================== INIT ====================== */
+applyTheme();
 renderHome();
 </script>
 <script>

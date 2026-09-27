@@ -1,7 +1,7 @@
 {
-  "name": "Part-66 Quiz",
-  "short_name": "Part66 Quiz",
-  "description": "EASA Part-66 exam-style practice and simulation",
+  "name": "B1B2 Trainer",
+  "short_name": "B1B2 Trainer",
+  "description": "EASA Part-66 B1/B2 exam-style practice and simulation",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f1720",
