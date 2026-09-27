@@ -119,6 +119,9 @@
   #reportViewBody .ok{color:#0a7d3f;font-weight:700;}
   #reportViewBody .bad{color:#c22;font-weight:700;}
   #reportViewBody .note{font-size:12px;color:#666;}
+  #reportViewBody .wrongq{background:#f9f9f9;border:1px solid #e2e2e2;border-left:3px solid #c22;border-radius:6px;padding:8px 10px;margin:6px 0 10px;}
+  #reportViewBody .wrongq-text{font-size:13px;font-weight:600;margin-bottom:4px;}
+  #reportViewBody .wrongq-expl{font-size:12px;color:#555;margin-top:4px;}
   #reportViewBody ul{font-size:13px;}
   @media print{
     body *{visibility:hidden;}
@@ -207,7 +210,7 @@
       <div class="stat-chip" id="totalQCount">-- questions</div>
       <button class="stat-chip" id="profileToggle" onclick="toggleProfile()" style="cursor:pointer;font-weight:700;"></button>
     </div>
-    <div class="footer-note"><strong>Update #29</strong> — fixed low-contrast text in light theme, theme button now shows a clear label</div>
+    <div class="footer-note"><strong>Update #31</strong> — reports now show the exact wrong questions and recurring mistake patterns, not just topic percentages</div>
   </div>
 
   <!-- MODULE LIST SCREEN -->
@@ -249,6 +252,7 @@
       <button class="backbtn" onclick="showScreen('screen-reports')">&#8592; Reports</button>
       <button class="smallbtn practice" style="flex:none;padding:7px 14px;" onclick="printReport()">Save as PDF</button>
     </div>
+    <div id="reportHint" class="card hidden" style="background:var(--tint-blue);border-color:var(--tint-blue-text);color:var(--tint-blue-text);font-size:0.85rem;line-height:1.4;"></div>
     <div id="reportViewBody" style="background:#fff;color:#111;border-radius:12px;padding:18px;margin-top:4px;"></div>
   </div>
 
@@ -947,6 +951,55 @@ function logSession(rec){
 const TOPIC_STATS_KEY = 'p66_topic_stats';
 function loadTopicStats(){ try{ return JSON.parse(localStorage.getItem(TOPIC_STATS_KEY))||{}; }catch(e){ return {}; } }
 function saveTopicStats(s){ localStorage.setItem(TOPIC_STATS_KEY, JSON.stringify(s)); }
+
+/* Keeps the exact wrong/skipped questions (text, your answer, correct answer,
+   explanation) for reports, capped to the most recent entries so it never
+   grows unbounded in localStorage. */
+const WRONG_LOG_KEY = 'p66_wrong_log';
+const WRONG_LOG_CAP = 1500;
+function loadWrongLog(){ try{ return JSON.parse(localStorage.getItem(WRONG_LOG_KEY))||[]; }catch(e){ return []; } }
+function saveWrongLog(list){ localStorage.setItem(WRONG_LOG_KEY, JSON.stringify(list)); }
+function logWrongAnswers(sid, modNum, wrongList){
+  if(!wrongList.length) return;
+  const log = loadWrongLog();
+  wrongList.forEach(a=>{
+    log.push({
+      sid: sid, modNum: modNum, topic: a.q.t || ('Module '+modNum),
+      q: a.q.q, o: a.q.o, chosen: (a.chosen===undefined?null:a.chosen), correct: a.correct, e: a.q.e,
+      date: new Date().toISOString()
+    });
+  });
+  saveWrongLog(log.slice(-WRONG_LOG_CAP));
+}
+
+/* Keyword dictionary used to spot recurring patterns inside a weak topic —
+   e.g. "you keep missing the cosine / hypotenuse" instead of just a topic
+   name. Built from the words that actually appear in the question bank. */
+const MISTAKE_KEYWORDS = [
+  [/\bhypotenuse\b/i, 'ipotenusa'], [/\bopposite\b/i, 'cateto opposto'], [/\badjacent\b/i, 'cateto adiacente'],
+  [/\bsin\b/i, 'seno'], [/\bcos\b/i, 'coseno'], [/\btan\b/i, 'tangente'], [/\btheta\b/i, 'angolo theta'],
+  [/\bradian/i, 'radianti'], [/\bpolar\b/i, 'coordinate polari'], [/\brectangular\b/i, 'coordinate rettangolari'],
+  [/\bangle/i, 'angoli'], [/\btriangle/i, 'triangoli'], [/\bsimilar\b/i, 'triangoli simili'],
+  [/\bpolygon/i, 'poligoni'], [/\bhexadecimal/i, 'esadecimale'], [/\bbinary\b/i, 'binario'],
+  [/\bgradient/i, 'pendenza della retta'], [/\bintercept/i, 'intercetta'], [/\bquadratic/i, 'equazioni quadratiche'],
+  [/\bsimultaneous/i, 'equazioni simultanee'], [/\blogarithm|\blog\b/i, 'logaritmi'], [/\bindices|\bindex\b|\bpower\b/i, 'potenze/indici'],
+  [/\bfraction/i, 'frazioni'], [/\bdenominator/i, 'denominatore comune'], [/\bratio\b/i, 'rapporti/proporzioni'],
+  [/\bpercentage/i, 'percentuali'], [/\baverage/i, 'medie'], [/\barea\b/i, 'aree'], [/\bvolume/i, 'volumi'],
+  [/\bradius/i, 'raggio'], [/\bcylinder/i, 'cilindro'], [/\brectangle/i, 'rettangoli'],
+  [/\bsquare root|\broot\b/i, 'radici'], [/\bcube\b/i, 'cubi'], [/\bfactor/i, 'fattori/MCD'], [/\bmultiple/i, 'multipli/mcm'],
+  [/\bunit conversion|\bconvert/i, 'conversione di unità'], [/\bexterior angle/i, 'angolo esterno'], [/\binterior angle/i, 'angolo interno'],
+];
+function findMistakeKeywords(entries){
+  const counts = {};
+  entries.forEach(a=>{
+    const seen = new Set();
+    MISTAKE_KEYWORDS.forEach(([re,label])=>{
+      if(seen.has(label)) return;
+      if(re.test(a.q)){ counts[label] = (counts[label]||0)+1; seen.add(label); }
+    });
+  });
+  return Object.entries(counts).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,4);
+}
 function recordTopicResults(modNum, answers){
   const stats = loadTopicStats();
   answers.forEach(a=>{
@@ -1227,6 +1280,41 @@ function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function wrongQuestionHtml(e){
+  const yourAns = (e.chosen===null || e.chosen===undefined || e.o[e.chosen]===undefined) ? '<em>Non risposta</em>' : esc(e.o[e.chosen]);
+  return `<div class="wrongq">
+    <div class="wrongq-text">${esc(e.q)}</div>
+    <div class="note">La tua risposta: <span class="bad">${yourAns}</span> &nbsp;·&nbsp; Corretta: <span class="ok">${esc(e.o[e.correct])}</span></div>
+    <div class="wrongq-expl">💡 ${esc(e.e)}</div>
+  </div>`;
+}
+
+function groupByTopic(entries, weakOrder){
+  const byTopic = {};
+  entries.forEach(e=>{ (byTopic[e.topic]=byTopic[e.topic]||[]).push(e); });
+  const ordered = (weakOrder||[]).filter(t=>byTopic[t]);
+  Object.keys(byTopic).forEach(t=>{ if(!ordered.includes(t)) ordered.push(t); });
+  return ordered.map(t=>({topic:t, items:byTopic[t]}));
+}
+
+function mistakesSectionHtml(entries, weakOrder, itemized){
+  if(!entries.length) return '<p class="note">Nessun errore registrato finora — ottimo lavoro, oppure non hai ancora fatto sessioni.</p>';
+  const groups = groupByTopic(entries, weakOrder).slice(0, 15);
+  let html = '';
+  groups.forEach(g=>{
+    const keywords = findMistakeKeywords(g.items);
+    html += `<div style="margin:14px 0;"><strong>${esc(g.topic)}</strong> — ${g.items.length} sbagliate`;
+    if(keywords.length){
+      html += `<div class="note">Ricorrono spesso: ${keywords.map(([label,c])=>`${esc(label)} (${c}×)`).join(', ')}</div>`;
+    }
+    html += `</div>`;
+    if(itemized){
+      g.items.slice(-6).reverse().forEach(e=>{ html += wrongQuestionHtml(e); });
+    }
+  });
+  return html;
+}
+
 function buildReport(kind, sessionIdx){
   const sessions = loadSessions();
   const topicStats = loadTopicStats();
@@ -1255,6 +1343,7 @@ function buildReport(kind, sessionIdx){
     const s = sessions[sessionIdx];
     const m = moduleMeta.find(mm=>mm.num===s.modNum) || {title:'Module '+s.modNum};
     const d = new Date(s.date);
+    const sessionWrongs = s.sid ? loadWrongLog().filter(w=>w.sid===s.sid) : null;
     title = `Session report — M${s.modNum} ${m.title}`;
     bodyHtml = `
       <table>
@@ -1267,10 +1356,18 @@ function buildReport(kind, sessionIdx){
       <h2>Weak topics at the time of this report</h2>
       ${topicTable(topicRows.filter(r=>r.modNum===s.modNum))}
       <p class="note">Note: the topic breakdown above is cumulative across all sessions for this module, not only this one session.</p>
+      <h2>Domande sbagliate in questa sessione${sessionWrongs?` (${sessionWrongs.length})`:''}</h2>
+      ${sessionWrongs===null
+        ? '<p class="note">Dettaglio domanda-per-domanda non disponibile: questa sessione è stata registrata prima di questo aggiornamento.</p>'
+        : (sessionWrongs.length===0
+            ? '<p class="note">Tutte le risposte sono state corrette in questa sessione! 🎉</p>'
+            : sessionWrongs.map(wrongQuestionHtml).join(''))}
     `;
   } else if(kind === 'weak'){
     title = 'Weak areas report';
     const weak = topicRows.filter(r=>r.att>=3 && r.acc < 75);
+    const weakTopicNames = (weak.length?weak:topicRows).map(r=>r.topic);
+    const weakWrongEntries = loadWrongLog().filter(w=>weakTopicNames.includes(w.topic));
     bodyHtml = `
       <p>Topics below 75% accuracy, weakest first. Based on ${sessions.length} completed session(s).</p>
       ${topicTable(weak.length?weak:topicRows.slice(0,10))}
@@ -1278,6 +1375,9 @@ function buildReport(kind, sessionIdx){
       <ul>
         ${(weak.length?weak:topicRows).slice(0,5).map(r=>`<li><strong>${esc(r.topic)}</strong> — ${r.acc}% correct over ${r.att} questions (${r.wrong} wrong)</li>`).join('')}
       </ul>
+      <h2>Dove sbagli di più, nel dettaglio</h2>
+      ${mistakesSectionHtml(weakWrongEntries, weakTopicNames, false)}
+      <p class="note">L'elenco copre le ultime ${WRONG_LOG_CAP} risposte sbagliate registrate in totale, non l'intero storico.</p>
     `;
   } else {
     title = 'Full progress report';
@@ -1305,6 +1405,9 @@ function buildReport(kind, sessionIdx){
       </table>
       <h2>Topic breakdown (weakest first)</h2>
       ${topicTable(topicRows)}
+      <h2>Domande sbagliate, per argomento (dalle più deboli)</h2>
+      ${mistakesSectionHtml(loadWrongLog(), topicRows.map(r=>r.topic), true)}
+      <p class="note">L'elenco copre le ultime ${WRONG_LOG_CAP} risposte sbagliate registrate in totale (fino a 6 domande più recenti per argomento), non l'intero storico.</p>
       <h2>Session history</h2>
       ${sessTable}
     `;
@@ -1319,11 +1422,67 @@ function buildReport(kind, sessionIdx){
   `;
 
   document.getElementById('reportViewBody').innerHTML = doc;
+  document.getElementById('reportHint').classList.add('hidden');
   showScreen('screen-reportview');
 }
 
+function isStandalonePwa(){
+  return window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+
 function printReport(){
-  window.print();
+  // On iOS, window.print() silently does nothing when the app is running
+  // installed on the home screen (standalone mode) - there is no Safari
+  // chrome to host the print sheet. In that case, download the report as a
+  // self-contained HTML file instead: Safari can open and print/save-as-PDF
+  // that from its own share sheet, which works reliably in every mode.
+  if(isStandalonePwa()){
+    downloadReportAsHtml();
+  } else {
+    window.print();
+  }
+}
+
+function downloadReportAsHtml(){
+  const bodyHtml = document.getElementById('reportViewBody').innerHTML;
+  const titleEl = document.querySelector('#reportViewBody h1');
+  const titleText = titleEl ? titleEl.textContent : 'Report';
+  const doc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${titleText}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#fff;color:#111;margin:0;padding:18px;}
+  h1{font-size:20px;margin:0 0 2px;}
+  h2{font-size:15px;margin-top:22px;border-bottom:1px solid #ddd;padding-bottom:4px;}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;}
+  th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
+  th{background:#f2f2f2;}
+  .ok{color:#0a7d3f;font-weight:700;}
+  .bad{color:#c22;font-weight:700;}
+  .note{font-size:12px;color:#666;}
+  .wrongq{background:#f9f9f9;border:1px solid #e2e2e2;border-left:3px solid #c22;border-radius:6px;padding:8px 10px;margin:6px 0 10px;}
+  .wrongq-text{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .wrongq-expl{font-size:12px;color:#555;margin-top:4px;}
+  ul{font-size:13px;}
+  @media print{ body{padding:0;} }
+</style>
+</head><body>${bodyHtml}</body></html>`;
+
+  const blob = new Blob([doc], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  const safeName = titleText.replace(/[^a-z0-9]+/gi, '_').slice(0, 60) || 'Report';
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safeName + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+
+  const hint = document.getElementById('reportHint');
+  hint.textContent = '📥 File scaricato. Aprilo (dalle Download di Safari o dall\'app File), poi tocca Condividi → Stampa e scegli "Salva in PDF" per ottenere il PDF.';
+  hint.classList.remove('hidden');
 }
 
 /* ====================== TOPIC STUDY SCREEN ====================== */
@@ -1685,12 +1844,18 @@ function finishSession(timedOut){
   // for the score: if you didn't answer, it means you didn't know it.
   const fullResultsList = currentQuestions.map((q,i)=> userAnswers[i] || {q:q, chosen:null, correct:q.a, isCorrect:false});
   recordTopicResults(currentModNum, fullResultsList);
+  const sid = Date.now() + '_' + Math.random().toString(36).slice(2,7);
   logSession({
+    sid: sid,
     modNum: currentModNum, mode: currentMode, pct: pct, correct: correctCount,
     total: total, passed: passed, date: new Date().toISOString(),
     topic: currentMode==='review' ? currentReviewTopic : undefined,
     difficulty: currentDifficulty || undefined
   });
+  // Keep the exact wrong/skipped questions from this session (text, your
+  // answer, correct answer, explanation) so reports can show them later,
+  // not just the topic percentage.
+  logWrongAnswers(sid, currentModNum, fullResultsList.filter(a=>!a.isCorrect));
 
   const m = moduleMeta.find(mm=>mm.num===currentModNum);
   const modeLabel = currentMode==='exam' ? `[${currentDifficulty==='easy'?'Realistic Exam':currentDifficulty==='hard'?'Advanced Exam':'Exam'}] ` : currentMode==='review' ? `[Review: ${currentReviewTopic}] ` : '[Practice] ';
