@@ -1,5 +1,5 @@
-const CACHE = 'part66-quiz-v31';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'part66-quiz-v32';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './jspdf.min.js'];
 
 // Install: pre-cache the app shell, then take over immediately.
 self.addEventListener('install', e => {
