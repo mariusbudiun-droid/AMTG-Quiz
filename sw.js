@@ -1,4 +1,4 @@
-const CACHE = 'part66-quiz-v32';
+const CACHE = 'part66-quiz-v33';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './jspdf.min.js'];
 
 // Install: pre-cache the app shell, then take over immediately.
